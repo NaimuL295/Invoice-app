@@ -1,0 +1,108 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            Int       @id @default(autoincrement())
+  user_name     String?   // 💡 Auth.js-এর সুবিধার্থে এটিকে অপশনাল (?) করা হলো
+  email         String    @unique
+  password      String?
+  googleId      String?   @unique // আপনার আগের কলামটি থাকলো
+  emailVerified DateTime? // ✅ Auth.js-এর জন্য লাগবে
+  image         String?   // ✅ গুগলের প্রোফাইল পিকচার সেভ করার জন্য লাগবে
+  
+  // রিলেশনস
+  accounts      Account[] // ✅ গুগলের মতো সোশ্যাল অ্যাকাউন্টের ডাটা এখানে থাকবে
+  sessions      Session[] // ✅ ডাটাবেজ সেশন স্ট্র্যাটেজি ব্যবহার করলে লাগবে
+  invoices      Invoice[]
+  qrcodelink String?
+  printLayout   String?   @default("1")
+  address       String?
+  phone         String?
+  createdAt     DateTime  @default(now())
+
+  @@map("users")
+}
+
+// ✅ Auth.js-এর জন্য এই নতুন টেবিলটি অবশ্যই যোগ করতে হবে
+model Account {
+  id                String  @id @default(cuid())
+  userId            Int     // 💡 আপনার ইউজারের ইন্টিজার আইডির সাথে মিল রাখা হয়েছে
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+// ✅ সেশন টেবিল (এটিও যোগ করে রাখা ভালো)
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       Int
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+// ✅ ভেরিফিকেশন টোকেন টেবিল (ভবিষ্যতে ইমেইল লগইন বা পাসওয়ার্ড রিসেটের জন্য লাগবে)
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+model Invoice {
+  id Int @id @default(autoincrement())
+
+  uid String? @unique @default(uuid())
+
+  customer    String
+  date        DateTime? @default(now())
+  subtotal    Float
+  total       Float
+  discount    Float?
+  due         Float?
+  received    Float
+  paymentType String
+  description String?
+  userId      Int
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  items     Item[]
+  createdAt DateTime @default(now())
+}
+
+model Item {
+  id        Int    @id @default(autoincrement())
+  item_name String
+  quantity  Int
+  unit      String
+  price     Float
+
+  invoiceId Int
+  invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+}
