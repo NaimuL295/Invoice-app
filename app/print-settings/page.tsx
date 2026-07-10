@@ -1,99 +1,150 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { pdf } from "@react-pdf/renderer";
-import { Printer, Loader2 } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { Settings, Save, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 
+// Types for better DX
+type LayoutId = "1" | "2" | "3" | "4";
 
-import type { Invoice } from "../../../../types/type";
-
-interface LayoutProps {
-  data: Invoice;
-  title?: string;
+interface LayoutOption {
+  id: LayoutId;
+  label: string;
+  desc: string;
 }
 
-type PrintPreviewProps = {
-  invoiceId: string;
-};
+const LAYOUT_OPTIONS: LayoutOption[] = [
+  { id: "1", label: "Classic Minimal", desc: "Standard professional look" },
+  { id: "2", label: "Modern Grid", desc: "Best for high-item counts" },
+  { id: "3", label: "Compact", desc: "Saves paper, tight spacing" },
+  { id: "4", label: "Detailed", desc: "Includes full descriptions" },
+];
 
-const layoutMap: Record<string, React.FC<LayoutProps>> = {
-  "1": LayoutOne,
-  "2": LayoutTwo,
-  "3": LayoutThree,
-  "4": LayoutFour,
-};
+export default function PrintSettings() {
+  const { data: session } = useSession();
+  const user = session?.user;
 
-const PrintPreview: React.FC<PrintPreviewProps> = ({ invoiceId }) => {
-  const [data, setData] = useState<Invoice | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isError, setIsError] = useState(false);
+  const [layout, setLayout] = useState<string>("1");
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [initialLoading, setInitialLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    if (!invoiceId) return;
-
-    const fetchInvoice = async () => {
-      setIsLoading(true);
-      setIsError(false);
+    const fetchSettings = async () => {
+      if (!user?.id) return;
 
       try {
-        const res = await fetch(`/api/invoice/${invoiceId}`, {
+        const res = await fetch(`/api/print-settings?userId=${user.id}`, {
           credentials: "include",
         });
 
-        if (!res.ok) throw new Error("Failed to fetch invoice");
+        if (!res.ok) throw new Error("Failed to load settings");
 
-        const json = await res.json();
-        setData(json.data);
+        const data: { layout: string } = await res.json();
+        if (data.layout) setLayout(data.layout);
       } catch (err) {
-        console.error("Failed to fetch invoice", err);
-        setIsError(true);
+        console.error("Failed to load settings", err);
       } finally {
-        setIsLoading(false);
+        setInitialLoading(false);
       }
     };
 
-    fetchInvoice();
-  }, [invoiceId]);
+    fetchSettings();
+  }, [user?.id]);
 
-  const handlePrint = async () => {
-    if (!data) return;
-
-    // Get the layout based on user preference, fallback to LayoutOne
-    const layoutKey = data.user.printLayout;
-    console.log(layoutKey, data);
-
-    const LayoutComponent = layoutMap[layoutKey] || LayoutOne;
-
-    const doc = <LayoutComponent data={data} />;
+  const handleSave = async () => {
+    if (!user?.id) return;
+    setStatus("loading");
 
     try {
-      const blob = await pdf(doc).toBlob();
-      const url = URL.createObjectURL(blob);
+      const res = await fetch(`/api/print-settings?userId=${user.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ layout }),
+      });
 
-      // Open in new tab
-      window.open(url);
-      // Safety: Revoke URL after a minute to prevent memory leaks
-      setTimeout(() => URL.revokeObjectURL(url), 60000);
-    } catch (err) {
-      console.error("Could not generate PDF", err);
-      alert("Failed to generate invoice print view.");
+      if (!res.ok) throw new Error("Save failed");
+
+      setStatus("success");
+      setTimeout(() => setStatus("idle"), 3000);
+    } catch (error) {
+      console.error("Save failed", error);
+      setStatus("error");
+      setTimeout(() => setStatus("idle"), 4000);
     }
   };
 
-  if (isLoading)
-    return <Loader2 className="animate-spin text-gray-400" size={20} />;
-  if (isError)
-    return <span className="text-red-500 text-xs">Error loading invoice</span>;
+  if (initialLoading) {
+    return (
+      <div className="flex items-center justify-center p-12">
+        <Loader2 className="w-6 h-6 animate-spin " />
+      </div>
+    );
+  }
 
   return (
-    <button
-      onClick={handlePrint}
-      className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-      title="Print Invoice"
-    >
-      <Printer size={20} className="text-gray-600" />
-    </button>
-  );
-};
+    <div className="max-w-2xl mx-auto p-6 bg-white rounded-xl shadow-sm border border-slate-200">
+      <div className="flex items-center gap-3 mb-6 border-b pb-4">
+        <Settings className="w-6 h-6 " />
+        <h2 className="text-xl font-bold text-slate-800">Print Configuration</h2>
+      </div>
 
-export default PrintPreview;
+      <div className="space-y-6">
+        <section>
+          <label className="block text-sm font-semibold text-slate-700 mb-1">
+            Default Document Layout
+          </label>
+          <p className="text-sm text-slate-500 mb-4">
+            Select how your invoices and reports will be structured by default.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {LAYOUT_OPTIONS.map((opt) => (
+              <button
+                key={opt.id}
+                type="button"
+                onClick={() => setLayout(opt.id)}
+                className={`text-left p-4 border-2 rounded-lg transition-all ${
+                  layout === opt.id
+                    ? "border-green-600 bg-indigo-50 ring-1"
+                    : "border-slate-100 hover:border-slate-900 bg-white"
+                }`}
+              >
+                <div className="font-medium text-slate-900">{opt.label}</div>
+                <div className="text-xs text-slate-500">{opt.desc}</div>
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <div className="flex items-center justify-between pt-6 border-t">
+          <div className="h-6">
+            {status === "success" && (
+              <span className="flex items-center text-green-600 text-sm animate-in fade-in duration-300">
+                <CheckCircle className="w-4 h-4 mr-1" /> Settings saved!
+              </span>
+            )}
+            {status === "error" && (
+              <span className="flex items-center text-red-600 text-sm">
+                <AlertCircle className="w-4 h-4 mr-1" /> Save failed.
+              </span>
+            )}
+          </div>
+
+          <button
+            onClick={handleSave}
+            disabled={status === "loading"}
+            className="flex items-center gap-2 px-6 py-2.5 bg-gray-950 text-white font-semibold rounded-lg transition-all shadow-md active:scale-95"
+          >
+            {status === "loading" ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Save className="w-4 h-4" />
+            )}
+            {status === "loading" ? "Saving..." : "Save Changes"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -1,4 +1,3 @@
-"use server"
 import { create } from "zustand";
 
 export type Item = {
@@ -12,7 +11,7 @@ export type Item = {
 
 type InvoiceStore = {
   items: Item[];
-  setItems: (items: Item[]) => void; // <--- Add line
+  setItems: (items: Item[]) => void;
   addItem: (item: Item) => void;
   editItem: (updatedItem: Item) => void;
   deleteItem: (id: number) => void;
@@ -26,7 +25,6 @@ export const useInvoiceStore = create<InvoiceStore>((set) => ({
     set((state) => ({
       items: [...state.items, item],
     })),
-
   editItem: (updatedItem) =>
     set((state) => ({
       items: state.items.map((item) =>
@@ -37,6 +35,5 @@ export const useInvoiceStore = create<InvoiceStore>((set) => ({
     set((state) => ({
       items: state.items.filter((item) => item.id !== id),
     })),
-
- clearItems: () => set({ items: [] }),
+  clearItems: () => set({ items: [] }),
 }));

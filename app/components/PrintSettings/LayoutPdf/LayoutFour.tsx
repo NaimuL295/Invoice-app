@@ -1,7 +1,8 @@
 "use client";
 
+import { Invoice, Item } from "@/types/next-auth";
 import { Document, Page, View, Text, StyleSheet } from "@react-pdf/renderer";
-import type { Invoice, subItem } from "../../../../../types/type";
+
 import { toWords } from "to-words/en-US";
 
 interface LayoutProps {
@@ -77,7 +78,7 @@ export default function LayoutFour({ title, data }: LayoutProps) {
 
         <View style={styles.section}>
           <Text style={styles.headerText}>Items</Text>
-          {invoiceData.items.map((item: subItem, index: number) => (
+          {invoiceData.items.map((item: Item, index: number) => (
             <View style={styles.itemRow} key={index}>
               <Text>{item.item_name}</Text>
               <Text>

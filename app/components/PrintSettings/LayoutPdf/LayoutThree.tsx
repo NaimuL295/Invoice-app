@@ -1,7 +1,7 @@
 "use client"; // 🟩 Added for Next.js safety
 
 import { Document, Page, View, Text, StyleSheet } from "@react-pdf/renderer";
-import type { Invoice, subItem } from "../../../../../types/type";
+import { Invoice, Item } from "@/types/next-auth";
 import { toWords } from "to-words";
 
 interface LayoutProps {
@@ -199,7 +199,7 @@ export default function LayoutThree({ title, data }: LayoutProps) {
           </View>
 
           {/* Table Body */}
-          {invoiceData.items.map((item: subItem, index: number) => {
+          {invoiceData.items.map((item: Item, index: number) => {
             const itemQuantity = Number(item.quantity) || 0;
             const itemPrice = Number(item.price) || 0;
             const rowAmount = itemQuantity * itemPrice; // 🟩 Dynamic row totals calculation

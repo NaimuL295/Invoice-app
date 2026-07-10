@@ -1,7 +1,7 @@
 "use client"; // 🟩 Essential for Next.js Client Component compilation
 
 import { Document, Page, View, Text, StyleSheet } from "@react-pdf/renderer";
-import type { Invoice, subItem } from "../../../../../types/type";
+import { Invoice, Item } from "@/types/next-auth";
 import { toWords } from 'to-words';
 
 interface LayoutProps {
@@ -177,7 +177,7 @@ export default function LayoutTwo({ title, data }: LayoutProps) {
             <Text style={styles.col6}>Amount</Text>
           </View>
 
-          {invoiceData.items.map((item: subItem, index: number) => {
+          {invoiceData.items.map((item: Item, index: number) => {
             const qty = Number(item.quantity) || 0;
             const price = Number(item.price) || 0;
             return (

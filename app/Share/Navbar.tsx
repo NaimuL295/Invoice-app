@@ -34,9 +34,9 @@ export default function Navbar() {
 
           <nav className="space-y-1">
             <DesktopNavLink
-              href="/"
+              href="/transition"
               icon={<LayoutDashboard size={20} />}
-              label="Dashboard"
+              label=" TransitionPage"
               active={pathname === "/"}
             />
             <DesktopNavLink
@@ -85,7 +85,7 @@ export default function Navbar() {
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-8 py-3 z-50">
         <ul className="flex justify-between items-center max-w-md mx-auto">
           <MobileTab
-            href="/"
+            href="/transition"
             icon={<LayoutDashboard size={24} />}
             active={pathname === "/"}
           />
