@@ -73,7 +73,9 @@ export default function LayoutFour({ title, data }: LayoutProps) {
           <Text style={styles.headerText}>Invoice Details</Text>
           <Text>Invoice No: {invoiceData.invoiceNo}</Text>
           <Text>Customer: {invoiceData.billTo}</Text>
-          <Text>Date: {invoiceData.date}</Text>
+         <Text>
+  {invoiceData.date.toLocaleString()}
+</Text>
         </View>
 
         <View style={styles.section}>

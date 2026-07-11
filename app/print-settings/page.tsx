@@ -1,149 +1,188 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
-import { Settings, Save, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
+import { getPrintSettings, updatePrintSettings } from "@/app/actions/printSettings";
+import toast from "react-hot-toast";
+import { CheckCircle2, LayoutTemplate, Save } from "lucide-react";
 
-// Types for better DX
-type LayoutId = "1" | "2" | "3" | "4";
-
-interface LayoutOption {
-  id: LayoutId;
-  label: string;
-  desc: string;
-}
-
-const LAYOUT_OPTIONS: LayoutOption[] = [
-  { id: "1", label: "Classic Minimal", desc: "Standard professional look" },
-  { id: "2", label: "Modern Grid", desc: "Best for high-item counts" },
-  { id: "3", label: "Compact", desc: "Saves paper, tight spacing" },
-  { id: "4", label: "Detailed", desc: "Includes full descriptions" },
+const layouts = [
+  {
+    id: "1",
+    title: "Classic",
+    description: "Traditional invoice with clean table layout.",
+  },
+  {
+    id: "2",
+    title: "Modern",
+    description: "Modern design with bold headers and spacing.",
+  },
+  {
+    id: "3",
+    title: "Minimal",
+    description: "Simple layout focused on readability.",
+  },
+  {
+    id: "4",
+    title: "Elegant",
+    description: "Sophisticated styling with refined typography.",
+  },
+  {
+    id: "5",
+    title: "Compact",
+    description: "Dense structure optimized for space or thermal prints.",
+  },
 ];
 
 export default function PrintSettings() {
-  const { data: session } = useSession();
-  const user = session?.user;
-
-  const [layout, setLayout] = useState<string>("1");
-  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
-  const [initialLoading, setInitialLoading] = useState<boolean>(true);
+  const [layout, setLayout] = useState("1");
+  const [loading, setLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    const fetchSettings = async () => {
-      if (!user?.id) return;
-
+    async function fetchSettings() {
       try {
-        const res = await fetch(`/api/print-settings?userId=${user.id}`, {
-          credentials: "include",
-        });
-
-        if (!res.ok) throw new Error("Failed to load settings");
-
-        const data: { layout: string } = await res.json();
-        if (data.layout) setLayout(data.layout);
-      } catch (err) {
-        console.error("Failed to load settings", err);
+        const data = await getPrintSettings();
+        setLayout(data.layout);
+      } catch (error) {
+        console.error(error);
+        toast.error("Failed to load settings");
       } finally {
-        setInitialLoading(false);
+        setLoading(false);
       }
-    };
+    }
 
     fetchSettings();
-  }, [user?.id]);
+  }, []);
 
   const handleSave = async () => {
-    if (!user?.id) return;
-    setStatus("loading");
+    setIsSaving(true);
+
+    const loadingToast = toast.loading("Saving settings...");
 
     try {
-      const res = await fetch(`/api/print-settings?userId=${user.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ layout }),
+      const result = await updatePrintSettings(layout);
+      toast.success(result.message || "Settings updated successfully!", {
+        id: loadingToast,
       });
-
-      if (!res.ok) throw new Error("Save failed");
-
-      setStatus("success");
-      setTimeout(() => setStatus("idle"), 3000);
     } catch (error) {
-      console.error("Save failed", error);
-      setStatus("error");
-      setTimeout(() => setStatus("idle"), 4000);
+      toast.error(
+        error instanceof Error ? error.message : "Something went wrong",
+        { id: loadingToast }
+      );
+    } finally {
+      setIsSaving(false);
     }
   };
 
-  if (initialLoading) {
+  if (loading) {
     return (
-      <div className="flex items-center justify-center p-12">
-        <Loader2 className="w-6 h-6 animate-spin " />
+      <div className="h-[450px] flex items-center justify-center">
+        <div className="animate-pulse text-lg font-medium ">
+          Loading Settings...
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-2xl mx-auto p-6 bg-white rounded-xl shadow-sm border border-slate-200">
-      <div className="flex items-center gap-3 mb-6 border-b pb-4">
-        <Settings className="w-6 h-6 " />
-        <h2 className="text-xl font-bold text-slate-800">Print Configuration</h2>
-      </div>
+    <div className="max-w-5xl mx-auto p-8">
+      <div className="rounded-3xl overflow-hidden border  shadow-2xl">
 
-      <div className="space-y-6">
-        <section>
-          <label className="block text-sm font-semibold text-slate-700 mb-1">
-            Default Document Layout
-          </label>
-          <p className="text-sm text-slate-500 mb-4">
-            Select how your invoices and reports will be structured by default.
-          </p>
+        {/* Header */}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {LAYOUT_OPTIONS.map((opt) => (
+        <div className="  px-10 py-10 ">
+          <div className="flex items-center gap-4">
+            <div className="h-16 w-16 rounded-2xl  flex items-center justify-center">
+              <LayoutTemplate size={34} />
+            </div>
+
+            <div>
+              <h1 className="text-3xl font-bold">
+                Print Settings
+              </h1>
+
+              <p className="mt-2 ">
+                Select your preferred invoice print layout. This layout
+                will be used whenever you print invoices.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Body */}
+
+        <div className="p-10">
+
+          <h2 className="text-xl font-semibold mb-6">
+            Choose Layout
+          </h2>
+
+          <div className="grid md:grid-cols-3 gap-6">
+
+            {layouts.map((item) => (
               <button
-                key={opt.id}
-                type="button"
-                onClick={() => setLayout(opt.id)}
-                className={`text-left p-4 border-2 rounded-lg transition-all ${
-                  layout === opt.id
-                    ? "border-green-600 bg-indigo-50 ring-1"
-                    : "border-slate-100 hover:border-slate-900 bg-white"
-                }`}
+                key={item.id}
+                onClick={() => setLayout(item.id)}
+                className={`relative rounded-2xl border-2 p-6 transition-all duration-300 text-left hover:scale-[1.02]
+
+                ${
+                  layout === item.id
+                    ? "border-blue-600 bg-blue-50  shadow-lg"
+                    : "border-gray-200 dark:border-gray-700 hover:border-blue-400"
+                }
+                `}
               >
-                <div className="font-medium text-slate-900">{opt.label}</div>
-                <div className="text-xs text-slate-500">{opt.desc}</div>
+                {layout === item.id && (
+                  <CheckCircle2
+                    className="absolute top-4 right-4 "
+                    size={24}
+                  />
+                )}
+
+                <div className="h-40 rounded-xl border bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 flex items-center justify-center mb-5">
+                  <LayoutTemplate size={50} className="text-gray-400" />
+                </div>
+
+                <h3 className="font-bold text-lg">
+                  {item.title}
+                </h3>
+
+                <p className="mt-2 text-sm text-gray-500">
+                  {item.description}
+                </p>
               </button>
             ))}
           </div>
-        </section>
 
-        <div className="flex items-center justify-between pt-6 border-t">
-          <div className="h-6">
-            {status === "success" && (
-              <span className="flex items-center text-green-600 text-sm animate-in fade-in duration-300">
-                <CheckCircle className="w-4 h-4 mr-1" /> Settings saved!
-              </span>
-            )}
-            {status === "error" && (
-              <span className="flex items-center text-red-600 text-sm">
-                <AlertCircle className="w-4 h-4 mr-1" /> Save failed.
-              </span>
-            )}
+          {/* Footer */}
+
+          <div className="mt-10 flex justify-between items-center border-t pt-8">
+
+            <div>
+              <p className="font-medium">
+                Selected Layout
+              </p>
+
+              <p className="text-sm text-gray-500">
+                {
+                  layouts.find((x) => x.id === layout)?.title
+                }
+              </p>
+            </div>
+
+            <button
+              onClick={handleSave}
+              disabled={isSaving}
+              className="flex items-center gap-2 rounded-xl  px-8 py-3  font-semibold hover:bg-blue-700 disabled:opacity-60 transition"
+            >
+              <Save size={18} />
+              {isSaving ? "Saving..." : "Save Settings"}
+            </button>
+
           </div>
 
-          <button
-            onClick={handleSave}
-            disabled={status === "loading"}
-            className="flex items-center gap-2 px-6 py-2.5 bg-gray-950 text-white font-semibold rounded-lg transition-all shadow-md active:scale-95"
-          >
-            {status === "loading" ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Save className="w-4 h-4" />
-            )}
-            {status === "loading" ? "Saving..." : "Save Changes"}
-          </button>
         </div>
+
       </div>
     </div>
   );

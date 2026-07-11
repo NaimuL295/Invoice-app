@@ -8,6 +8,7 @@ import toast from "react-hot-toast";
 import { Invoice, Item } from "@/types/next-auth";
 import { deleteInvoice } from "../actions/invoiceActions";
 import { getInvoices } from "../actions/getInvoices";
+import Print from "../components/PrintSettings/LayoutPdf/Print";
 
 export default function TransitionPage({
   initialInvoices = [],
@@ -103,6 +104,7 @@ type DBInvoicePayload = Omit<Invoice, "user_name" | "companyEmail" | "email"> & 
       </div>
     );
   }
+  console.log(invoices)
 return (
   <div className="max-w-4xl mx-auto px-4 py-6 space-y-4">
     {invoices.map((inv: Invoice) => {

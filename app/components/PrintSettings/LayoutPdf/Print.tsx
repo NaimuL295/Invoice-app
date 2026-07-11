@@ -8,11 +8,8 @@ import LayoutOne from "@/app/components/PrintSettings/LayoutPdf/LayoutOne";
 import LayoutTwo from "@/app/components/PrintSettings/LayoutPdf/LayoutTwo";
 import LayoutThree from "@/app/components/PrintSettings/LayoutPdf/LayoutThree";
 import LayoutFour from "@/app/components/PrintSettings/LayoutPdf/LayoutFour";
-import { Invoice } from "@/types/next-auth";
-
-
-// If you have a backend server action to get a single invoice, import it here:
-// import { getInvoiceById } from "../actions/invoiceActions";
+import { Invoice, } from "@/types/next-auth";
+import { getInvoiceId } from "@/app/actions/invoiceActions";
 
 interface LayoutProps {
   data: Invoice;
@@ -30,69 +27,119 @@ const layoutMap: Record<string, React.FC<LayoutProps>> = {
   "4": LayoutFour,
 };
 
-const Print: React.FC<PrintPreviewProps> = ({ invoiceId }) => {
+export default function Print({ invoiceId }: PrintPreviewProps) {
   const [data, setData] = useState<Invoice | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isError, setIsError] = useState(false);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
   useEffect(() => {
     if (!invoiceId) return;
+    let isCancelled = false;
 
-    async function fetchSingleInvoice() {
+    async function fetchInvoice() {
       setIsLoading(true);
       setIsError(false);
       try {
-        // Option A: Using native fetch if it is an API route
-        const res = await fetch(`/api/invoice/${invoiceId}`);
-        if (!res.ok) throw new Error("Failed to fetch invoice");
-        const json = await res.json();
-        setData(json.data);
+        const idNumber = Number(invoiceId);
 
-        // Option B: If using Server Actions instead, swap with this:
-        // const invoiceData = await getInvoiceById(Number(invoiceId));
-        // setData(invoiceData);
+        if (isNaN(idNumber)) {
+          throw new Error("Invalid invoice ID");
+        }
+
+        const invoiceData: Invoice = await getInvoiceId(idNumber);
+
+        if (invoiceData && !isCancelled) {
+          const formattedInvoice: Invoice = {
+            ...invoiceData,
+            uid: invoiceData.uid ?? "",
+            user_name:
+              invoiceData.user_name ?? invoiceData.user?.user_name ?? "",
+            email: invoiceData.email ?? invoiceData.user?.email ?? "",
+            companyEmail:
+              invoiceData.companyEmail ?? invoiceData.user?.email ?? "",
+            date: invoiceData.date
+              ? new Date(invoiceData.date).toISOString().split("T")[0]
+              : "",
+            createdAt: invoiceData.createdAt
+              ? new Date(invoiceData.createdAt).toISOString()
+              : new Date().toISOString(),
+            discount: invoiceData.discount ?? 0,
+            subtotal: invoiceData.subtotal ?? 0,
+            total: invoiceData.total ?? 0,
+            due: invoiceData.due ?? 0,
+            received: invoiceData.received ?? 0,
+            customer: invoiceData.customer ?? "",
+            paymentType: invoiceData.paymentType ?? "",
+            description: invoiceData.description ?? "",
+            items: invoiceData.items ?? [],
+          };
+
+          setData(formattedInvoice);
+        }
       } catch (err) {
-        console.error(err);
-        setIsError(true);
+        if (!isCancelled) {
+          console.error(err);
+          setIsError(true);
+        }
       } finally {
-        setIsLoading(false);
+        if (!isCancelled) setIsLoading(false);
       }
     }
 
-    fetchSingleInvoice();
+    fetchInvoice();
+
+    return () => {
+      isCancelled = true;
+    };
   }, [invoiceId]);
 
   const handlePrint = async () => {
     if (!data) return;
 
-    // Get the layout based on user preference, fallback to LayoutOne
+    // 1. Instantly open a blank window within the user interaction scope
+    const printWindow = window.open("about:blank", "_blank");
+    if (!printWindow) {
+      alert("Popup blocker active! Please allow popups for this site.");
+      return;
+    }
+
+    // 2. Placeholder loading message inside the new window
+    printWindow.document.title = "Generating Invoice...";
+    printWindow.document.body.innerHTML = `
+      <div style="display:flex; justify-content:center; align-items:center; height:100vh; font-family:sans-serif; color:#4b5563;">
+        <p>Generating PDF invoice, please wait...</p>
+      </div>
+    `;
+
     const layoutKey = data.user?.printLayout || "1";
-    console.log(layoutKey, data);
-
     const LayoutComponent = layoutMap[layoutKey] || LayoutOne;
-
-    // Pass data to satisfy the component's requirements
     const doc = <LayoutComponent data={data} />;
 
     try {
+      setIsGeneratingPdf(true);
+
       const blob = await pdf(doc).toBlob();
       const url = URL.createObjectURL(blob);
 
-      // Open in new tab
-      window.open(url);
-      
-      // Safety: Revoke URL after a minute to prevent memory leaks
-      setTimeout(() => URL.revokeObjectURL(url), 60000);
+      printWindow.location.href = url;
+
+      printWindow.addEventListener("load", () => {
+        URL.revokeObjectURL(url);
+      });
     } catch (err) {
       console.error("Could not generate PDF", err);
+      printWindow.close();
       alert("Failed to generate invoice print view.");
+    } finally {
+      setIsGeneratingPdf(false);
     }
   };
 
   if (isLoading) {
     return <Loader2 className="animate-spin text-gray-400" size={20} />;
   }
-  
+
   if (isError) {
     return <span className="text-red-500 text-xs">Error loading invoice</span>;
   }
@@ -100,13 +147,15 @@ const Print: React.FC<PrintPreviewProps> = ({ invoiceId }) => {
   return (
     <button
       onClick={handlePrint}
-      className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+      className="p-2 hover:bg-gray-100 rounded-full transition-colors disabled:opacity-50"
       title="Print Invoice"
-      disabled={!data}
+      disabled={!data || isGeneratingPdf}
     >
-      <Printer size={20} className="text-gray-600" />
+      {isGeneratingPdf ? (
+        <Loader2 className="animate-spin text-gray-600" size={20} />
+      ) : (
+        <Printer size={20} className="text-gray-600" />
+      )}
     </button>
   );
-};
-
-export default Print;
+}

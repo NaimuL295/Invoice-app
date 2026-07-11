@@ -21,41 +21,7 @@ declare module "next-auth/jwt" {
   }
 }
 
-// export interface Item {
-//   id: number;
-//   item_name: string;
-//   quantity: number;
-//   unit: string;
-//   price: number;
-//   invoiceId?: number;
-// }
-// export interface Item {
-//   id?: number;
-//   name: string;
-//   qty: number;
-//   price: number;
-//   invoiceId?: number;
-// }
-// export interface Invoice {
-//   id?: number;
-//   user_name:string;
-//   companyEmail:string
-//   uid: string;
-//   email:string
-//   customer: string;
-//   date: string;
-//   subtotal: number;
-//   total: number;
-//   discount: number;
-//   due: number;
-//   received: number;
-//   paymentType: string;
-//   description: string;
-//   userId: number;
-//   createdAt: string;
-//  user: User;
-//   items: Item[];
-// }
+
 export interface User {
   id: number;
   createdAt: Date;
@@ -70,7 +36,12 @@ export interface User {
   address?: string | null;
   phone?: string | null;
 }
+import { InvoicePrint } from "@/types/next-auth";
 
+interface LayoutProps {
+  data: InvoicePrint;
+  title?: string;
+}
 export interface Item {
   id?: number;
   item_name: string; // Unified version (adjust property names if your DB uses name/qty)
@@ -80,23 +51,45 @@ export interface Item {
   invoiceId?: number;
 }
 
+// export interface Invoice {
+//   id?: number;
+//   user_name: string;
+//   companyEmail: string;
+//   uid: string;
+//   email: string;
+//   customer: string;
+//   date: string;
+//   subtotal: number;
+//   total: number;
+//   discount: number;
+//   due: number;
+//   received: number;
+//   paymentType: string;
+//   description: string;
+//   userId: number;
+//   createdAt: string | Date;
+//   user?: User;         // Made optional to safely support both flat and relational structures
+//   items?: Item[];      // Made optional to prevent strict relation issues when loading lists
+// }
+
 export interface Invoice {
-  id?: number;
+  id: number;
   user_name: string;
   companyEmail: string;
   uid: string;
   email: string;
   customer: string;
-  date: string;
+  date: string | Date;       // Safe parsing for JavaScript Date strings
   subtotal: number;
   total: number;
-  discount: number;
+  discount: number;          // Represents the percentage (2) in your calculation
+  discountType?: "percentage" | "flat"; // Optional helper for handling the 2% vs $2 issue
   due: number;
   received: number;
   paymentType: string;
   description: string;
   userId: number;
-  createdAt: string | Date;
-  user?: User;         // Made optional to safely support both flat and relational structures
-  items?: Item[];      // Made optional to prevent strict relation issues when loading lists
+  createdAt: string | Date;  
+  user: User ;                // Present in response data
+  items: Item[];             // Present in response data as Array(1)
 }

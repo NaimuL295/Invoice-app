@@ -100,9 +100,8 @@ model Item {
   id        Int    @id @default(autoincrement())
   item_name String
   quantity  Int
-  unit      String
+  unit      String?
   price     Float
-
   invoiceId Int
   invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 }
