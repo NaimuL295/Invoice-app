@@ -9,14 +9,14 @@ export async function POST(req: Request) {
     // Validation
     if (!email || !password) {
       return NextResponse.json(
-        { error: "Email এবং password আবশ্যক" },
+        { error: "Email and password are required" },
         { status: 400 }
       );
     }
 
     if (password.length < 6) {
       return NextResponse.json(
-        { error: "Password কমপক্ষে ৬ ক্যারেক্টার হতে হবে" },
+        { error: "Password must be at least 6 characters" },
         { status: 400 }
       );
     }
@@ -25,7 +25,7 @@ export async function POST(req: Request) {
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
       return NextResponse.json(
-        { error: "এই email দিয়ে already একাউন্ট আছে" },
+        { error: "An account with this email already exists" },
         { status: 409 }
       );
     }
@@ -49,7 +49,7 @@ export async function POST(req: Request) {
   } catch (error) {
     console.error("Register error:", error);
     return NextResponse.json(
-      { error: "সার্ভারে সমস্যা হয়েছে" },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }

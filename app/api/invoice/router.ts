@@ -1,15 +1,16 @@
 "use server" // KEEP this here
 
+import { Item } from "@/app/store/useInvoiceStore";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { ItemType } from "@/types/next-auth";
+
 
 // 1. Change the function name and accept raw data instead of a Request object
 export async function createInvoice(data: {
   uid?: string;
   date?: string;
   customer: string;
-  items: ItemType[];
+  items: Item[];
   subtotal: number | string;
   total: number | string;
   discount?: number | string;
@@ -44,7 +45,7 @@ export async function createInvoice(data: {
           connect: { id: Number(session.user.id) },
         },
         items: {
-          create: data.items.map((item: ItemType) => ({
+          create: data.items.map((item: Item) => ({
             item_name: item.item_name,
             quantity: Number(item.quantity),
             unit: item.unit,

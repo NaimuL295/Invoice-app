@@ -111,10 +111,24 @@ export async function getInvoiceId(id: number) {
   const invoice = await prisma.invoice.findFirst({
     where: {
       id: id,
-      userId: Number(session.user.id), // Ensure user owns the invoice
+      userId: Number(session.user.id),
     },
     include: {
-      user: true,
+      user: {
+        select: {
+          id: true,
+          user_name: true,
+          email: true,
+          printLayout: true,
+          createdAt: true,
+          googleId: true,
+          emailVerified: true,
+          image: true,
+          qrcodelink: true,
+          address: true,
+          phone: true,
+        },
+      },
       items: true,
     },
   });

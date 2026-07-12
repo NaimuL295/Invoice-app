@@ -138,7 +138,9 @@ export default function LayoutThree({ title, data }: LayoutProps) {
     companyEmail: data?.email || "email@example.com",
     invoiceNo: data?.uid || data?.id || "0",
     billTo: data?.customer || "Customer Name", // 🟩 Swapped from user_name to dynamic customer property
-    date: data?.date || "00-00-0000",
+    date: data?.date
+      ? new Date(data.date).toLocaleDateString()
+      : "00-00-0000",
     items: data?.items || [],
     received: Number(data?.received) || 0,
     discount: Number(data?.discount) || 0,

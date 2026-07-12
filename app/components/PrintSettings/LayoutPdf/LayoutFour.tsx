@@ -54,7 +54,9 @@ export default function LayoutFour({ title, data }: LayoutProps) {
     companyEmail: data?.email || "email@example.com",
     invoiceNo: data?.uid || "0",
     billTo: data?.customer || "Customer Name",
-    date: data?.date || "00-00-0000",
+    date: data?.date
+      ? new Date(data.date).toLocaleDateString()
+      : "00-00-0000",
     items: data?.items || [],
     received: Number(data?.received) || 0,
     discount: Number(data?.discount) || 0,
@@ -73,9 +75,7 @@ export default function LayoutFour({ title, data }: LayoutProps) {
           <Text style={styles.headerText}>Invoice Details</Text>
           <Text>Invoice No: {invoiceData.invoiceNo}</Text>
           <Text>Customer: {invoiceData.billTo}</Text>
-         <Text>
-  {invoiceData.date.toLocaleString()}
-</Text>
+          <Text>Date: {invoiceData.date}</Text>
         </View>
 
         <View style={styles.section}>

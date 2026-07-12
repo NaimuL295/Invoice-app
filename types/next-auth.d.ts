@@ -51,26 +51,6 @@ export interface Item {
   invoiceId?: number;
 }
 
-// export interface Invoice {
-//   id?: number;
-//   user_name: string;
-//   companyEmail: string;
-//   uid: string;
-//   email: string;
-//   customer: string;
-//   date: string;
-//   subtotal: number;
-//   total: number;
-//   discount: number;
-//   due: number;
-//   received: number;
-//   paymentType: string;
-//   description: string;
-//   userId: number;
-//   createdAt: string | Date;
-//   user?: User;         // Made optional to safely support both flat and relational structures
-//   items?: Item[];      // Made optional to prevent strict relation issues when loading lists
-// }
 
 export interface Invoice {
   id: number;
@@ -81,7 +61,7 @@ export interface Invoice {
   customer: string;
   date: string | Date;       // Safe parsing for JavaScript Date strings
   subtotal: number;
-  total: number;
+  total?: number;
   discount: number;          // Represents the percentage (2) in your calculation
   discountType?: "percentage" | "flat"; // Optional helper for handling the 2% vs $2 issue
   due: number;

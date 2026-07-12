@@ -12,11 +12,37 @@ export async function getInvoices() {
 
   try {
     const invoices = await prisma.invoice.findMany({
-      where: { userId: Number(session.user.id) }, // Add Number() here if userId is Int
+      where: { userId: Number(session.user.id) },
       orderBy: { id: "desc" },
-      include: {
-        user: true,
-        items: true,
+      select: {
+        id: true,
+        uid: true,
+        customer: true,
+        date: true,
+        subtotal: true,
+        total: true,
+        discount: true,
+        due: true,
+        received: true,
+        paymentType: true,
+        description: true,
+        userId: true,
+        createdAt: true,
+        user: {
+          select: {
+            id: true,
+            user_name: true,
+            email: true,
+            printLayout: true,
+            createdAt: true,
+            googleId: true,
+            emailVerified: true,
+            image: true,
+            qrcodelink: true,
+            address: true,
+            phone: true,
+          },
+        },
       },
     });
 

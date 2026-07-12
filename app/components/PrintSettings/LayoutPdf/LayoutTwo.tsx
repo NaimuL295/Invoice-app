@@ -113,7 +113,9 @@ export default function LayoutTwo({ title, data }: LayoutProps) {
     companyEmail: data?.email || "email@example.com",
     invoiceNo: data?.uid || data?.id || "0",
     billTo: data?.customer || "Customer Name",
-    date: data?.date || "00-00-0000",
+    date: data?.date
+      ? new Date(data.date).toLocaleDateString()
+      : "00-00-0000",
     items: data?.items || [],
     received: Number(data?.received) || 0,
     discount: Number(data?.discount) || 0,
@@ -163,6 +165,7 @@ export default function LayoutTwo({ title, data }: LayoutProps) {
           <View>
             <Text style={{ textAlign: 'right' }}>Invoice No.: {invoiceData.invoiceNo}</Text>
             <Text style={{ textAlign: 'right' }}>Date: {invoiceData.date}</Text>
+
           </View>
         </View>
 
