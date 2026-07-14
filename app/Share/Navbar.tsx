@@ -21,7 +21,7 @@ export default function Navbar() {
   return (
     <>
       {/* --- DESKTOP SIDEBAR --- */}
-      <aside className="hidden md:flex flex-col fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-200">
+      <aside className="hidden md:flex flex-col fixed left-0 top-0 h-screen w-54 bg-white border-r border-gray-200">
         <div className="p-6">
           <div className="flex items-center gap-2 mb-10 px-2">
             <div className="bg-green-600 p-1.5 rounded-lg text-white">
@@ -36,7 +36,7 @@ export default function Navbar() {
             <DesktopNavLink
               href="/transition"
               icon={<LayoutDashboard size={20} />}
-              label=" TransitionPage"
+              label=" Transition"
               active={pathname === "/"}
             />
             <DesktopNavLink

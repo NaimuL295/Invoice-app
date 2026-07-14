@@ -12,5 +12,12 @@ export const proxy = auth;
 export const middleware = auth;
 
 export const config = {
-  matcher: ["/dashboard/:path*"],
+  matcher: [
+    "/dashboard/:path*",
+    "/transition/:path*",
+    "/create/:path*",
+    "/modify/:path*",
+    "/profile/:path*",
+   "/print-settings/:path*"
+  ],
 };

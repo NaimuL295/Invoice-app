@@ -45,7 +45,7 @@ export default function TransitionClient({
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-6 space-y-4">
+    <div className="max-w-4xl mx-auto px-3 sm:px-4 py-6 space-y-3 sm:space-y-4">
       {invoices.map((inv) => {
         const total = inv.total || 0;
         const received = inv.received || 0;
@@ -54,71 +54,28 @@ export default function TransitionClient({
         return (
           <div
             key={inv.id}
-            className="bg-white border border-gray-100 rounded-2xl p-5 hover:shadow-md transition relative"
+            className="bg-white border border-gray-100 rounded-2xl p-4 sm:p-5 hover:shadow-md transition relative"
           >
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <Link
-                href={`/modify/${inv.id}`}
-                className="w-full sm:w-auto block space-y-2"
-              >
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium px-2 py-0.5 bg-gray-100 text-gray-600 rounded-md">
-                    #{inv.id}
-                  </span>
-                  <p className="text-[11px] text-gray-400">
-                    {inv.createdAt
-                      ? new Date(inv.createdAt).toLocaleDateString()
-                      : "No Date"}
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-3 gap-x-4 gap-y-1 sm:flex sm:items-center sm:gap-6 pt-1">
-                  <div>
-                    <p className="text-[11px] text-gray-400 uppercase tracking-wider font-medium">
-                      Total
-                    </p>
-                    <p className="text-sm font-bold text-gray-800">৳ {total}</p>
-                  </div>
-                  <div>
-                    <p className="text-[11px] text-gray-400 uppercase tracking-wider font-medium">
-                      Received
-                    </p>
-                    <p className="text-sm font-semibold text-blue-600">
-                      ৳ {received}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[11px] text-gray-400 uppercase tracking-wider font-medium">
-                      Status
-                    </p>
-                    <p
-                      className={`text-sm font-bold ${due > 0 ? "text-red-600" : "text-green-600"}`}
-                    >
-                      {due > 0 ? `৳ ${due}` : "No Due"}
-                    </p>
-                  </div>
-                </div>
+            {/* Top row: id/date on the left, menu button on the right — always aligned, on every breakpoint */}
+            <div className="flex items-start justify-between gap-2">
+              <Link href={`/modify/${inv.id}`} className="flex items-center gap-2 min-w-0">
+                <span className="text-xs font-medium px-2 py-0.5 bg-gray-100 text-gray-600 rounded-md shrink-0">
+                  #{inv.id}
+                </span>
+                <p className="text-[11px] text-gray-400 truncate">
+                  {inv.createdAt
+                    ? new Date(inv.createdAt).toLocaleDateString()
+                    : "No Date"}
+                </p>
               </Link>
 
-              <div className="flex sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto pt-3 sm:pt-0 border-t border-gray-50 sm:border-0 gap-3 relative">
-                <div className="flex items-center gap-3">
-                  <Print invoiceId={inv.id.toString()} />
-                  <span
-                    className={`text-[10px] px-2.5 py-1 rounded-full font-bold tracking-wider ${
-                      due > 0
-                        ? "bg-red-50 text-red-600"
-                        : "bg-green-50 text-green-600"
-                    }`}
-                  >
-                    {due > 0 ? "UNPAID" : "PAID"}
-                  </span>
-                </div>
-
+              <div className="relative shrink-0">
                 <button
                   onClick={() =>
                     setOpenMenuId(openMenuId === inv.id ? null : inv.id)
                   }
                   className="text-gray-400 hover:text-black p-1.5 hover:bg-gray-50 rounded-full transition"
+                  aria-label="Open invoice menu"
                 >
                   <EllipsisVertical size={18} />
                 </button>
@@ -126,7 +83,7 @@ export default function TransitionClient({
                 {openMenuId === inv.id && (
                   <div
                     onMouseLeave={() => setOpenMenuId(null)}
-                    className="absolute right-0 bottom-12 sm:bottom-auto sm:top-10 w-32 bg-white border shadow-xl rounded-xl text-xs z-20 overflow-hidden"
+                    className="absolute right-0 top-9 w-32 bg-white border shadow-xl rounded-xl text-xs z-20 overflow-hidden"
                   >
                     <button className="w-full px-3 py-2.5 hover:bg-gray-50 flex items-center gap-2 text-gray-700 transition">
                       <Share size={13} /> Share
@@ -142,6 +99,54 @@ export default function TransitionClient({
                     </button>
                   </div>
                 )}
+              </div>
+            </div>
+
+            {/* Body: figures + actions. Stacks on mobile, sits in a row from sm up. */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3">
+              <Link
+                href={`/modify/${inv.id}`}
+                className="grid grid-cols-3 gap-x-3 gap-y-1 sm:flex sm:items-center sm:gap-6"
+              >
+                <div>
+                  <p className="text-[11px] text-gray-400 uppercase tracking-wider font-medium">
+                    Total
+                  </p>
+                  <p className="text-sm font-bold text-gray-800 whitespace-nowrap">
+                    ৳ {total}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[11px] text-gray-400 uppercase tracking-wider font-medium">
+                    Received
+                  </p>
+                  <p className="text-sm font-semibold text-blue-600 whitespace-nowrap">
+                    ৳ {received}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[11px] text-gray-400 uppercase tracking-wider font-medium">
+                    Status
+                  </p>
+                  <p
+                    className={`text-sm font-bold whitespace-nowrap ${due > 0 ? "text-red-600" : "text-green-600"}`}
+                  >
+                    {due > 0 ? `৳ ${due}` : "No Due"}
+                  </p>
+                </div>
+              </Link>
+
+              <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t border-gray-50 sm:border-0">
+                <span
+                  className={`text-[10px] px-2.5 py-1 rounded-full font-bold tracking-wider ${
+                    due > 0
+                      ? "bg-red-50 text-red-600"
+                      : "bg-green-50 text-green-600"
+                  }`}
+                >
+                  {due > 0 ? "UNPAID" : "PAID"}
+                </span>
+                <Print invoiceId={inv.id.toString()} />
               </div>
             </div>
           </div>

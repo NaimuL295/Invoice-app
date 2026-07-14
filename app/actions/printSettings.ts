@@ -3,12 +3,11 @@
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-
 export async function getPrintSettings() {
   const session = await auth();
 
   if (!session?.user?.id) {
-    throw new Error("Unauthorized");
+    return { layout: "1" }; // fallback, throw না করে
   }
 
   try {
@@ -17,14 +16,12 @@ export async function getPrintSettings() {
       select: { printLayout: true },
     });
 
-    // Fallback to "1" (Classic) if no layout is found
     return { layout: user?.printLayout || "1" };
   } catch (error) {
     console.error("[GET_PRINT_SETTINGS_ERROR]:", error);
-    throw new Error("Failed to fetch print settings");
+    return { layout: "1" };
   }
 }
-
 export async function updatePrintSettings(layout: string) {
   const session = await auth();
 

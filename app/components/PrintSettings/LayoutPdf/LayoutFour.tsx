@@ -2,104 +2,251 @@
 
 import { Invoice, Item } from "@/types/next-auth";
 import { Document, Page, View, Text, StyleSheet } from "@react-pdf/renderer";
-
-import { toWords } from "to-words/en-US";
+import { toWords } from "to-words";
 
 interface LayoutProps {
   title?: string;
   data: Invoice;
 }
 
-// 🟩 Moved out of the component to prevent re-creation on every render
+// 🛒 Standardized guidelines optimized for 80mm (3-inch) Thermal POS Printers
 const styles = StyleSheet.create({
   page: {
-    padding: 20,
-    fontSize: 10,
+    paddingTop: 10,
+    paddingBottom: 20,
+    paddingHorizontal: 8,
+    fontSize: 9,
+    fontFamily: "Helvetica",
+    color: "#000000",
     backgroundColor: "#ffffff",
   },
-  title: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 10,
-    textAlign: "center",
-  },
-  section: {
+  headerWrapper: {
+    alignItems: "center",
     marginBottom: 8,
   },
-  headerText: {
+  companyName: {
     fontSize: 12,
     fontWeight: "bold",
-    marginBottom: 4,
-  },
-  itemRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 3,
-    borderBottom: "1 solid #ddd",
-    paddingBottom: 2,
-  },
-  totalSection: {
-    marginTop: 10,
-    borderTop: "1 solid #000",
-    paddingTop: 6,
-  },
-  totalText: {
+    textTransform: "uppercase",
     marginBottom: 2,
   },
+  receiptTitle: {
+    fontSize: 10,
+    fontWeight: "bold",
+    marginBottom: 4,
+    textTransform: "uppercase",
+  },
+  metaSection: {
+    marginBottom: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: "#000000",
+    borderBottomStyle: "dashed",
+    paddingBottom: 4,
+  },
+  metaRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 2,
+  },
+  metaLabel: {
+    color: "#444444",
+  },
+  metaValue: {
+    fontWeight: "bold",
+  },
+  // Rigid flex layouts forcing text to align neatly like a real register
+  tableHeader: {
+    flexDirection: "row",
+    borderBottomWidth: 1,
+    borderBottomColor: "#000000",
+    borderBottomStyle: "dashed",
+    paddingBottom: 3,
+    marginBottom: 3,
+    fontWeight: "bold",
+  },
+  tableRow: {
+    flexDirection: "row",
+    paddingVertical: 2,
+    alignItems: "flex-start",
+  },
+  colDescription: { 
+    flex: 2.2, 
+    paddingRight: 2,
+    wordWrap: "break-word" 
+  },
+  colQty: { flex: 0.5, textAlign: "center" },
+  colPrice: { flex: 1, textAlign: "right" },
+  colTotal: { flex: 1.1, textAlign: "right" },
+  
+  summarySection: {
+    marginTop: 4,
+    paddingTop: 4,
+    borderTopWidth: 1,
+    borderTopColor: "#000000",
+    borderTopStyle: "dashed",
+  },
+  summaryRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 1,
+  },
+  boldSummaryRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 3,
+    marginTop: 2,
+    borderTopWidth: 1,
+    borderTopColor: "#000000",
+    borderBottomWidth: 1,
+    borderBottomColor: "#000000",
+    fontSize: 10,
+    fontWeight: "bold",
+  },
+  wordsText: {
+    marginTop: 6,
+    fontSize: 7.5,
+    fontStyle: "italic",
+    textAlign: "center",
+    textTransform: "capitalize",
+    paddingHorizontal: 4,
+  },
+  footerMessage: {
+    marginTop: 12,
+    textAlign: "center",
+    fontSize: 8,
+    fontWeight: "bold",
+  }
 });
 
 export default function LayoutFour({ title, data }: LayoutProps) {
+  // Normalize incoming data structures safely
   const invoiceData = {
-    user_name: data?.user_name || "Company Name",
-    companyEmail: data?.email || "email@example.com",
-    invoiceNo: data?.uid || "0",
-    billTo: data?.customer || "Customer Name",
+    user_name: data?.user_name || "RETAIL SHOP",
+    companyEmail: data?.companyEmail || data?.email || "",
+    invoiceNo: data?.uid || "0000",
+    billTo: data?.customer || "Walk-in Customer",
     date: data?.date
-      ? new Date(data.date).toLocaleDateString()
+      ? new Date(data.date).toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "2-digit",
+        })
       : "00-00-0000",
     items: data?.items || [],
     received: Number(data?.received) || 0,
     discount: Number(data?.discount) || 0,
-    subtotal: Number(data?.subtotal || data?.total) || 0,
+    subtotal: Number(data?.subtotal) || 0,
     total: Number(data?.total) || 0,
   };
 
   const due = invoiceData.total - invoiceData.received;
 
+  // Safe toWords evaluation with explicit BDT fallback styling
+  let wordsRepresentation = "";
+  if (invoiceData.total > 0) {
+    try {
+      wordsRepresentation = toWords(invoiceData.total) + " Taka Only";
+    } catch (e) {
+      wordsRepresentation = "";
+    }
+  }
+
   return (
     <Document>
-      <Page size="A5" style={styles.page}>
-        <Text style={styles.title}>{title || "Invoice"}</Text>
-
-        <View style={styles.section}>
-          <Text style={styles.headerText}>Invoice Details</Text>
-          <Text>Invoice No: {invoiceData.invoiceNo}</Text>
-          <Text>Customer: {invoiceData.billTo}</Text>
-          <Text>Date: {invoiceData.date}</Text>
+      {/* Width: 226pt matches standard 80mm thermal rolls. Responsive dynamic height context. */}
+      <Page size={{ width: 226 }} style={styles.page}>
+        
+        {/* Top Header Block */}
+        <View style={styles.headerWrapper}>
+          <Text style={styles.companyName}>{invoiceData.user_name}</Text>
+          {invoiceData.companyEmail ? (
+            <Text style={{ fontSize: 7, marginBottom: 2 }}>{invoiceData.companyEmail}</Text>
+          ) : null}
+          <Text style={styles.receiptTitle}>{title || "Cash Receipt"}</Text>
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.headerText}>Items</Text>
-          {invoiceData.items.map((item: Item, index: number) => (
-            <View style={styles.itemRow} key={index}>
-              <Text>{item.item_name}</Text>
-              <Text>
-                {item.quantity} × {item.price}
-              </Text>
+        {/* Invoice Metadata */}
+        <View style={styles.metaSection}>
+          <View style={styles.metaRow}>
+            <Text style={styles.metaLabel}>Inv No:</Text>
+            <Text style={styles.metaValue}>#{invoiceData.invoiceNo}</Text>
+          </View>
+          <View style={styles.metaRow}>
+            <Text style={styles.metaLabel}>Date:</Text>
+            <Text style={styles.metaValue}>{invoiceData.date}</Text>
+          </View>
+          <View style={styles.metaRow}>
+            <Text style={styles.metaLabel}>Cust:</Text>
+            <Text style={styles.metaValue}>{invoiceData.billTo}</Text>
+          </View>
+        </View>
+
+        {/* Dynamic Item Grid */}
+        <View>
+          <View style={styles.tableHeader}>
+            <Text style={styles.colDescription}>Item</Text>
+            <Text style={styles.colQty}>Qty</Text>
+            <Text style={styles.colPrice}>Price</Text>
+            <Text style={styles.colTotal}>Total</Text>
+          </View>
+
+          {invoiceData.items.map((item: Item, index: number) => {
+            const qty = Number(item.quantity) || 0;
+            const price = Number(item.price) || 0;
+            const itemTotal = qty * price;
+
+            return (
+              <View style={styles.tableRow} key={index}>
+                <Text style={styles.colDescription}>{item.item_name}</Text>
+                <Text style={styles.colQty}>{qty}</Text>
+                <Text style={styles.colPrice}>{price.toFixed(1)}</Text>
+                <Text style={styles.colTotal}>{itemTotal.toFixed(1)}</Text>
+              </View>
+            );
+          })}
+        </View>
+
+        {/* Financial Overview Section */}
+        <View style={styles.summarySection}>
+          <View style={styles.summaryRow}>
+            <Text>Subtotal:</Text>
+            <Text>{invoiceData.subtotal.toFixed(2)}</Text>
+          </View>
+          
+          {invoiceData.discount > 0 && (
+            <View style={styles.summaryRow}>
+              <Text>Discount ({invoiceData.discount}%):</Text>
+              <Text>-{((invoiceData.subtotal * invoiceData.discount) / 100).toFixed(2)}</Text>
             </View>
-          ))}
+          )}
+
+          {/* Fixed line to use standard clean 'Tk.' token alignment */}
+          <View style={styles.boldSummaryRow}>
+            <Text>NET TOTAL:</Text>
+            <Text>Tk. {invoiceData.total.toFixed(2)}</Text>
+          </View>
+
+          <View style={styles.summaryRow}>
+            <Text>Paid:</Text>
+            <Text>{invoiceData.received.toFixed(2)}</Text>
+          </View>
+
+          <View style={styles.summaryRow}>
+            <Text style={{ fontWeight: due > 0 ? "bold" : "normal" }}>Due:</Text>
+            <Text style={{ fontWeight: due > 0 ? "bold" : "normal" }}>{due.toFixed(2)}</Text>
+          </View>
         </View>
 
-        <View style={styles.totalSection}>
-          <Text style={styles.totalText}>Subtotal: {invoiceData.subtotal}</Text>
-          <Text style={styles.totalText}>Discount: {invoiceData.discount}%</Text>
-          <Text style={styles.totalText}>Total: {invoiceData.total}</Text>
-          <Text style={styles.totalText}>Received: {invoiceData.received}</Text>
-          <Text style={styles.totalText}>Due: {due}</Text>
-          <Text style={styles.totalText}>
-            In Words: {toWords(invoiceData.total || 0)}
+        {/* Verbal Translation Render */}
+        {wordsRepresentation ? (
+          <Text style={styles.wordsText}>
+            {wordsRepresentation}
           </Text>
-        </View>
+        ) : null}
+
+        {/* Footer */}
+        <Text style={styles.footerMessage}>THANK YOU FOR YOUR VISIT</Text>
+
       </Page>
     </Document>
   );

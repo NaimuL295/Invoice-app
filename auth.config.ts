@@ -6,19 +6,26 @@ export const authConfig = {
     Google({
       clientId: process.env.AUTH_GOOGLE_ID!,
       clientSecret: process.env.AUTH_GOOGLE_SECRET!,
-       allowDangerousEmailAccountLinking: true,
+      allowDangerousEmailAccountLinking: true,
     }),
   ],
 
   pages: {
-    signIn: "/auth/login",
+    signIn: "/auth/register",
   },
 
   callbacks: {
     authorized({ auth, request }) {
       const isLoggedIn = !!auth?.user;
       const pathname = request.nextUrl.pathname;
-      const protectedRoutes = ["/dashboard"];
+      const protectedRoutes = [
+         "/dashboard",
+        "/transition",
+        "/create",
+        "/modify",
+        "/profile",
+        "/print-settings",
+      ];
 
       const isProtectedRoute = protectedRoutes.some((route) =>
         pathname.startsWith(route)
