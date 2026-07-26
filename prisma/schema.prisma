@@ -12,6 +12,9 @@ datasource db {
   provider = "postgresql"
 }
 
+
+
+
 model User {
   id            Int       @id @default(autoincrement())
   user_name     String?   // 💡 Auth.js-এর সুবিধার্থে এটিকে অপশনাল (?) করা হলো

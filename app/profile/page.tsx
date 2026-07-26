@@ -27,7 +27,7 @@ const Profile = () => {
   return (
     <div className="min-h-screen bg-slate-50 p-6 flex items-center justify-center">
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-100">
-        
+
         {/* Header/Banner Area */}
         <div className="h-32 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500" />
 
@@ -38,9 +38,8 @@ const Profile = () => {
             <div className="absolute -top-12 left-0 p-1 bg-white rounded-2xl shadow-md">
               <div className="h-24 w-24 bg-slate-200 rounded-xl flex items-center justify-center text-slate-500 overflow-hidden">
                 {session.user.image ? (
-                  <img 
-                    src={session.user.image} 
-                    alt={session.user.name || "User"} 
+                  <img  src={session?.user.image}
+                    alt={session?.user.name || "User"}
                     className="h-full w-full object-cover"
                   />
                 ) : (

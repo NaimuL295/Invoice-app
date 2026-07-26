@@ -19,7 +19,7 @@ export const authConfig = {
       const isLoggedIn = !!auth?.user;
       const pathname = request.nextUrl.pathname;
       const protectedRoutes = [
-         "/dashboard",
+        "/dashboard",
         "/transition",
         "/create",
         "/modify",
@@ -28,7 +28,7 @@ export const authConfig = {
       ];
 
       const isProtectedRoute = protectedRoutes.some((route) =>
-        pathname.startsWith(route)
+        pathname.startsWith(route),
       );
 
       if (isProtectedRoute) {

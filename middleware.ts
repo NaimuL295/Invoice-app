@@ -1,14 +1,10 @@
-// src/proxy.ts
+// src/middleware.ts
 
 import NextAuth from "next-auth";
 import { authConfig } from "./auth.config";
 
 const { auth } = NextAuth(authConfig);
 
-// সরাসরি 'auth' কে 'proxy' নামে এক্সপোর্ট করা হলো (আপনার রিকোয়েস্ট অনুযায়ী)
-export const proxy = auth;
-
-// Next.js Middleware-এর জন্য এটাকে 'middleware' নামেই এক্সপোর্ট করতে হবে
 export const middleware = auth;
 
 export const config = {
@@ -18,6 +14,7 @@ export const config = {
     "/create/:path*",
     "/modify/:path*",
     "/profile/:path*",
-   "/print-settings/:path*"
+    "/print-settings/:path*",
+    "/((?!api/auth|_next/static|_next/image|favicon.ico).*)",
   ],
 };

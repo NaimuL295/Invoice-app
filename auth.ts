@@ -1,4 +1,3 @@
-
 // auth.ts
 import NextAuth, { User } from "next-auth";
 import type { AdapterUser, AdapterAccount } from "next-auth/adapters";
@@ -15,24 +14,24 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: {
     ...baseAdapter,
 
-    createUser: async (data: Omit<AdapterUser, "id">) => {
-      const { name, ...rest } = data;
+ createUser: async (data: AdapterUser) => {
+  const { name, id, ...rest } = data;
 
-      const user = await prisma.user.create({
-        data: {
-          ...rest,
-          user_name: name,
-        },
-      });
-
-      return {
-        id: String(user.id),
-        name: user.user_name,
-        email: user.email,
-        emailVerified: user.emailVerified,
-        image: user.image,
-      } as AdapterUser;
+  const user = await prisma.user.create({
+    data: {
+      ...rest,
+      user_name: name,
     },
+  });
+
+  return {
+    id: String(user.id),
+    name: user.user_name,
+    email: user.email,
+    emailVerified: user.emailVerified,
+    image: user.image,
+  } as AdapterUser;
+},
 
     linkAccount: async (data: AdapterAccount) => {
       await prisma.account.create({
@@ -60,7 +59,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         const valid = await bcrypt.compare(
           creds.password as string,
-          user.password
+          user.password,
         );
         if (!valid) return null;
 

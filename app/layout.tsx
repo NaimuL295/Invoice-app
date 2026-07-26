@@ -15,11 +15,12 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// app/layout.tsx
 export const metadata: Metadata = {
-  title: "invoice",
-  description: "/invoice-app",
+  title: "QuickBill",
+  description: "Invoice management application",
   icons: {
-    icon: "invoice.svg",
+    icon: "/invoice.svg",   // ✅ leading slash যোগ করো
   },
 };
 export default function RootLayout({
@@ -33,12 +34,12 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-       <Providers>
-        <Navbar></Navbar>
+        <Providers>
+          <Navbar></Navbar>
           <Toaster position="top-center" />
-         {children}</Providers>  
-      
-       </body>
+          {children}</Providers>
+
+      </body>
     </html>
   );
 }
