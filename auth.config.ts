@@ -25,6 +25,8 @@ export const authConfig = {
         "/modify",
         "/profile",
         "/print-settings",
+       "/products/create",
+        "/allproducts"
       ];
 
       const isProtectedRoute = protectedRoutes.some((route) =>

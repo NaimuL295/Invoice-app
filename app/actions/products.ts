@@ -1,4 +1,5 @@
 "use server";
+
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
@@ -11,12 +12,22 @@ type ProductInput = {
   price: number | string;
 };
 
-async function requireUserId() {
+async function requireUserId(): Promise<number> {
   const session = await auth();
+
   if (!session?.user?.id) {
+    console.error("requireUserId failed - Missing session user ID:", session);
     throw new Error("Unauthorized");
   }
-  return Number(session.user.id);
+
+  const userId = Number(session.user.id);
+
+  if (isNaN(userId)) {
+    console.error("requireUserId failed - Non-numeric user ID:", session.user.id);
+    throw new Error("Invalid User ID");
+  }
+
+  return userId;
 }
 
 export async function getProducts(): Promise<Product[]> {
@@ -27,7 +38,6 @@ export async function getProducts(): Promise<Product[]> {
   });
 }
 
-// 🔍 search action
 export async function searchProducts(query: string): Promise<Product[]> {
   const userId = await requireUserId();
 
@@ -52,9 +62,11 @@ export async function searchProducts(query: string): Promise<Product[]> {
 
 export async function createProduct(data: ProductInput): Promise<Product> {
   const userId = await requireUserId();
+
   if (!data.item_name || !data.category) {
     throw new Error("item_name and category required");
   }
+
   const product = await prisma.product.create({
     data: {
       item_name: data.item_name,
@@ -64,17 +76,21 @@ export async function createProduct(data: ProductInput): Promise<Product> {
       userId,
     },
   });
+
   revalidatePath("/products/create");
+  revalidatePath("/allproducts");
   return product;
 }
 
 export async function updateProduct(
   id: number,
-  data: ProductInput,
+  data: ProductInput
 ): Promise<Product> {
   const userId = await requireUserId();
+
   const existing = await prisma.product.findFirst({ where: { id, userId } });
   if (!existing) throw new Error("Not found");
+
   const product = await prisma.product.update({
     where: { id },
     data: {
@@ -84,15 +100,21 @@ export async function updateProduct(
       price: Number(data.price) || 0,
     },
   });
+
   revalidatePath("/products/create");
+  revalidatePath("/allproducts");
   return product;
 }
 
 export async function deleteProduct(id: number): Promise<{ success: true }> {
   const userId = await requireUserId();
+
   const existing = await prisma.product.findFirst({ where: { id, userId } });
   if (!existing) throw new Error("Not found");
+
   await prisma.product.delete({ where: { id } });
+
   revalidatePath("/products/create");
+  revalidatePath("/allproducts");
   return { success: true };
 }

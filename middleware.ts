@@ -15,6 +15,8 @@ export const config = {
     "/modify/:path*",
     "/profile/:path*",
     "/print-settings/:path*",
+   "/products/create/:path*",
+  "/allproducts/:path*",
     "/((?!api/auth|_next/static|_next/image|favicon.ico).*)",
   ],
 };
