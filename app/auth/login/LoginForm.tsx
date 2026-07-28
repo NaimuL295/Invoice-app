@@ -2,11 +2,10 @@
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 
 export default function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
 
@@ -20,21 +19,27 @@ export default function LoginForm() {
     setError("");
     setLoading(true);
 
-    const res = await signIn("credentials", {
-      email,
-      password,
-      redirect: false,
-    });
+    try {
+      const res = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      });
 
-    setLoading(false);
+      if (res?.error) {
+        setError("Email ba password bhul");
+        setLoading(false);
+        return;
+      }
 
-    if (res?.error) {
-      setError("Email ba password bhul");
-      return;
+      if (res?.ok) {
+        // পুরো ওয়েবসাইট ব্রাউজার থেকে হার্ড রিফ্রেশ হয়ে নতুন URL-এ যাবে
+        window.location.href = callbackUrl;
+      }
+    } catch (err) {
+      setError("An unexpected error occurred.");
+      setLoading(false);
     }
-
-    router.push(callbackUrl);
-    router.refresh();
   };
 
   const handleGoogleLogin = () => {

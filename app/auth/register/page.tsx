@@ -2,12 +2,9 @@
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 
 export default function RegisterPage() {
-  const router = useRouter();
-
   const [userName, setUserName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -19,35 +16,41 @@ export default function RegisterPage() {
     setError("");
     setLoading(true);
 
-    const res = await fetch("/api/register", {   // ✅ relative path
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ user_name: userName, email, password }),
-    });
+    try {
+      // ১. রেজিস্ট্রেশন API কল
+      const res = await fetch("/api/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_name: userName, email, password }),
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (!res.ok) {
+      if (!res.ok) {
+        setLoading(false);
+        setError(data.error || "Kichu bhul hoyeche");
+        return;
+      }
+
+      // ২. রেজিস্ট্রেশন সফল হলে অটো-লগইন
+      const loginRes = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      });
+
+      if (loginRes?.error) {
+        // লগইনে সমস্যা হলে হার্ড রিফ্রেশসহ লগইন পেজে নিয়ে যাবে
+        window.location.href = "/auth/login";
+        return;
+      }
+
+      // ৩. লগইন সফল হলে পুরো ওয়েবসাইট হার্ড রিফ্রেশ হয়ে ড্যাশবোর্ডে যাবে
+      window.location.href = "/dashboard";
+    } catch (err) {
+      setError("An unexpected error occurred");
       setLoading(false);
-      setError(data.error || "Kichu bhul hoyeche");
-      return;
     }
-
-    const loginRes = await signIn("credentials", {
-      email,
-      password,
-      redirect: false,
-    });
-
-    setLoading(false);
-
-    if (loginRes?.error) {
-      router.push("/auth/login");   // ✅ path ঠিক করা হলো
-      return;
-    }
-
-    router.push("/dashboard");
-    router.refresh();
   };
 
   const handleGoogleLogin = () => {
