@@ -11,6 +11,8 @@ import {
   FilePenLine,
   LogIn,
   LogOut,
+  PackagePlus,
+  Boxes,
 } from "lucide-react";
 
 export default function Navbar() {
@@ -21,36 +23,53 @@ export default function Navbar() {
   return (
     <>
       {/* --- DESKTOP SIDEBAR --- */}
-      <aside className="hidden md:flex flex-col fixed left-0 top-0 h-screen w-54 bg-white border-r border-gray-200">
+      <aside className="hidden md:flex flex-col fixed left-0 top-0 h-screen w-64 bg-white border-r border-slate-200/80 z-40">
         <div className="p-6">
-          <div className="flex items-center gap-2 mb-10 px-2">
-            <div className="bg-green-600 p-1.5 rounded-lg text-white">
-              <ReceiptText size={20} />
+          <div className="flex items-center gap-3 mb-8 px-2">
+            <div className="bg-green-600 p-2 rounded-xl text-white shadow-md shadow-green-200">
+              <ReceiptText size={22} />
             </div>
-            <span className="text-xl font-bold tracking-tight text-gray-900">
+            <span className="text-xl font-bold tracking-tight text-slate-900">
               QuickBill
             </span>
           </div>
 
-          <nav className="space-y-1">
+          <nav className="space-y-1.5">
             <DesktopNavLink
               href="/transition"
               icon={<LayoutDashboard size={20} />}
-              label=" Transition"
-              active={pathname === "/"}
+              label="Transition"
+              active={pathname === "/transition" || pathname === "/"}
             />
+
             <DesktopNavLink
               href="/create"
               icon={<PlusCircle size={20} />}
               label="New Invoice"
               active={pathname === "/create"}
             />
+
+            <DesktopNavLink
+              href="/products/create"
+              icon={<PackagePlus size={20} />}
+              label="Product Details"
+              active={pathname === "/products/create"}
+            />
+
+            <DesktopNavLink
+              href="/allproducts"
+              icon={<Boxes size={20} />}
+              label="All Products"
+              active={pathname === "/allproducts"}
+            />
+
             <DesktopNavLink
               href="/profile"
               icon={<UserRoundPen size={20} />}
               label="Profile"
               active={pathname === "/profile"}
             />
+
             <DesktopNavLink
               href="/print-settings"
               icon={<FilePenLine size={20} />}
@@ -61,7 +80,7 @@ export default function Navbar() {
         </div>
 
         {/* Desktop Bottom Section */}
-        <div className="mt-auto p-6 border-t border-gray-100">
+        <div className="mt-auto p-6 border-t border-slate-100">
           {!user ? (
             <DesktopNavLink
               href="/auth/login"
@@ -72,7 +91,7 @@ export default function Navbar() {
           ) : (
             <button
               onClick={() => signOut({ callbackUrl: "/auth/login" })}
-              className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-900 w-full"
+              className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-slate-500 hover:bg-red-50 hover:text-red-600 w-full text-sm"
             >
               <LogOut size={20} />
               Log Out
@@ -82,52 +101,40 @@ export default function Navbar() {
       </aside>
 
       {/* --- MOBILE BOTTOM BAR --- */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-8 py-3 z-50">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-6 py-2 z-50 shadow-lg">
         <ul className="flex justify-between items-center max-w-md mx-auto">
           <MobileTab
             href="/transition"
-            icon={<LayoutDashboard size={24} />}
-            active={pathname === "/"}
+            icon={<LayoutDashboard size={22} />}
+            active={pathname === "/transition" || pathname === "/"}
+          />
+
+          <MobileTab
+            href="/allproducts"
+            icon={<Boxes size={22} />}
+            active={pathname === "/allproducts"}
+          />
+
+          {/* Floating Action Button */}
+          <li className="-mt-10">
+            <Link
+              href="/create"
+              className="flex items-center justify-center bg-green-600 p-3.5 rounded-full text-white shadow-lg shadow-green-200 border-4 border-white active:scale-95 transition-transform"
+            >
+              <PlusCircle size={26} />
+            </Link>
+          </li>
+
+          <MobileTab
+            href="/print-settings"
+            icon={<FilePenLine size={22} />}
+            active={pathname === "/print-settings"}
           />
 
           <MobileTab
             href="/profile"
-            icon={<UserRoundPen size={24} />}
+            icon={<UserRoundPen size={22} />}
             active={pathname === "/profile"}
-          />
-
-          {/* Action Button - The "Plus" */}
-          <li className="-mt-12">
-            <Link
-              href="/create"
-              className="flex bg-green-600 p-4 rounded-full text-white shadow-xl border-4 border-white active:scale-95 transition-transform"
-            >
-              <PlusCircle size={28} />
-            </Link>
-          </li>
-
-          {/* Login/Logout for Mobile */}
-          {!user ? (
-            <MobileTab
-              href="/auth/login"
-              icon={<LogIn size={24} />}
-              active={pathname === "/auth/login"}
-            />
-          ) : (
-            <li>
-              <button
-                onClick={() => signOut({ callbackUrl: "/auth/login" })}
-                className="text-gray-400 hover:text-red-500 transition-colors"
-              >
-                <LogOut size={24} />
-              </button>
-            </li>
-          )}
-
-          <MobileTab
-            href="/print-settings"
-            icon={<FilePenLine size={24} />}
-            active={pathname === "/print-settings"}
           />
         </ul>
       </nav>
@@ -151,10 +158,10 @@ function DesktopNavLink({
   return (
     <Link
       href={href}
-      className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${
+      className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition-all font-semibold ${
         active
-          ? "bg-green-50 text-green-700"
-          : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+          ? "bg-green-50 text-green-700 shadow-sm"
+          : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
       }`}
     >
       {icon}
@@ -176,11 +183,14 @@ function MobileTab({
     <li>
       <Link
         href={href}
-        className={`transition-colors ${
-          active ? "text-green-600" : "text-gray-400"
+        className={`flex flex-col items-center justify-center p-2 rounded-xl transition-colors relative ${
+          active ? "text-green-600" : "text-slate-400 hover:text-slate-600"
         }`}
       >
         {icon}
+        {active && (
+          <span className="absolute -bottom-1 w-1 h-1 bg-green-600 rounded-full" />
+        )}
       </Link>
     </li>
   );

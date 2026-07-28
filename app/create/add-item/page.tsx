@@ -1,19 +1,30 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Package, Plus } from "lucide-react";
+import { Package, Plus, Search, X, Loader2 } from "lucide-react";
 import { useInvoiceStore } from "@/app/store/useInvoiceStore";
-import { toast } from "react-hot-toast"; // Fixed: Added correct import
+import { toast } from "react-hot-toast";
 
-const AddItemPage=()=> {
+
+import { searchProducts } from "@/app/actions/products";
+import { Product } from "@/types/next-auth";
+
+export default function AddItemPage() {
   const addItem = useInvoiceStore((state) => state.addItem);
   const router = useRouter();
+
+  const [isPending, startTransition] = useTransition();
+  const [searchResults, setSearchResults] = useState<Product[]>([]);
+  const [search, setSearch] = useState("");
+  const [showDropdown, setShowDropdown] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
 
   const [itemName, setItemName] = useState("");
   const [quantity, setQuantity] = useState("");
   const [unit, setUnit] = useState("");
   const [price, setPrice] = useState("");
+  const [category, setCategory] = useState("");
 
   const [units, setUnits] = useState([
     "Box",
@@ -27,10 +38,56 @@ const AddItemPage=()=> {
 
   const total = (Number(quantity) || 0) * (Number(price) || 0);
 
+  // Debounced real-time server action search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      startTransition(async () => {
+        try {
+          const results = await searchProducts(search);
+          setSearchResults(results);
+        } catch (error) {
+          console.error("Failed to search products:", error);
+          toast.error("Failed to fetch products");
+        }
+      });
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const onSelectStock = (item: Product) => {
+    setItemName(item.item_name);
+    setUnit(item.unit || "");
+    setPrice(String(item.price));
+    setCategory(item.category || "");
+    setSearch(item.item_name);
+    setShowDropdown(false);
+  };
+
+  const clearSelection = () => {
+    setItemName("");
+    setUnit("");
+    setPrice("");
+    setCategory("");
+    setSearch("");
+    setSearchResults([]);
+  };
+
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!itemName || !quantity || !unit || !price) {
-      toast.error("Please fill all fields"); // Tip: react-hot-toast uses .error() instead of .warn()
+      toast.error("Please fill all fields");
       return;
     }
 
@@ -44,12 +101,8 @@ const AddItemPage=()=> {
     });
 
     toast.success("Item added successfully!");
-
-    setItemName("");
+    clearSelection();
     setQuantity("");
-    setUnit("");
-    setPrice("");
-
     router.push("/create");
   };
 
@@ -58,14 +111,14 @@ const AddItemPage=()=> {
       setUnits([...units, newUnit]);
       setUnit(newUnit);
       setNewUnit("");
-      toast.success(`Unit "${newUnit}" added`); // Tip: react-hot-toast doesn't have .info(), using .success()
+      toast.success(`Unit "${newUnit}" added`);
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex  justify-center p-4 md:p-6">
-      <div className="bg-white rounded-[1.618rem] shadow-xl shadow-slate-200/60 border border-slate-100 overflow-hidden">
-        <div className="p-6 ">
+    <div className="min-h-screen bg-slate-50 flex justify-center p-4 md:p-6">
+      <div className="bg-white rounded-[1.618rem] shadow-xl shadow-slate-200/60 border border-slate-100 overflow-hidden w-full max-w-xl">
+        <div className="p-6">
           <header className="mb-6 md:mb-8">
             <div className="bg-green-500 w-12 h-12 rounded-2xl flex items-center justify-center text-white mb-4 shadow-lg shadow-green-200">
               <Package size={24} />
@@ -75,7 +128,72 @@ const AddItemPage=()=> {
           </header>
 
           <form onSubmit={onSubmit} className="space-y-4 md:space-y-5">
-            {/* Item Name */}
+            {/* Searchable Stock Select via Prisma Action */}
+            <div className="space-y-1.5 relative" ref={wrapperRef}>
+              <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">
+                Search Stock
+              </label>
+              <div className="relative">
+                <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Type product name or category..."
+                  value={search}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    setShowDropdown(true);
+                  }}
+                  onFocus={() => setShowDropdown(true)}
+                  className="w-full pl-10 pr-9 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:bg-white outline-none transition-all"
+                />
+                {search && (
+                  <button
+                    type="button"
+                    onClick={clearSelection}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  >
+                    <X size={16} />
+                  </button>
+                )}
+              </div>
+
+              {/* Server Results Dropdown */}
+              {showDropdown && (
+                <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                  {isPending ? (
+                    <div className="px-4 py-4 text-sm text-slate-400 flex items-center justify-center gap-2">
+                      <Loader2 size={16} className="animate-spin text-green-500" />
+                      <span>Searching database...</span>
+                    </div>
+                  ) : searchResults.length > 0 ? (
+                    searchResults.map((s) => (
+                      <button
+                        type="button"
+                        key={s.id}
+                        onClick={() => onSelectStock(s)}
+                        className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex justify-between items-center border-b border-slate-100 last:border-0"
+                      >
+                        <div>
+                          <p className="text-sm font-medium text-slate-800">{s.item_name}</p>
+                          {s.category && (
+                            <p className="text-[11px] text-slate-400">{s.category}</p>
+                          )}
+                        </div>
+                        <span className="text-sm font-semibold text-green-600">
+                          ৳{s.price}
+                        </span>
+                      </button>
+                    ))
+                  ) : (
+                    <div className="px-4 py-3 text-sm text-slate-400">
+                      No matching products — will be added as a custom item
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Item Description */}
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">
                 Item Description
@@ -86,15 +204,15 @@ const AddItemPage=()=> {
                 value={itemName}
                 onChange={(e) => setItemName(e.target.value)}
                 required
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2  focus:bg-white focus:border-transparent outline-none transition-all"
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:bg-white focus:border-transparent outline-none transition-all"
               />
             </div>
 
-            {/* Quantity & Unit (Golden Split) */}
-            <div className="flex gap-3">
-              <div className="flex-[1.618] space-y-1.5">
+            {/* Quantity and Price */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">
-                  Qty
+                  Quantity
                 </label>
                 <input
                   type="number"
@@ -102,83 +220,78 @@ const AddItemPage=()=> {
                   value={quantity}
                   onChange={(e) => setQuantity(e.target.value)}
                   required
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2  focus:bg-white outline-none transition-all"
+                  min="1"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:bg-white focus:border-transparent outline-none transition-all"
                 />
               </div>
-              <div className="flex-1 space-y-1.5 relative">
+
+              <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">
-                  Unit
+                  Price (৳)
                 </label>
-                <select
-                  value={unit}
-                  onChange={(e) => setUnit(e.target.value)}
+                <input
+                  type="number"
+                  placeholder="0.00"
+                  value={price}
+                  onChange={(e) => setPrice(e.target.value)}
                   required
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2  focus:bg-white outline-none transition-all appearance-none cursor-pointer"
-                >
-                  <option value="">Select</option>
-                  {units.map((u, idx) => (
-                    <option key={idx} value={u}>
-                      {u}
-                    </option>
-                  ))}
-                </select>
+                  min="0"
+                  step="0.01"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:bg-white focus:border-transparent outline-none transition-all"
+                />
               </div>
             </div>
 
-            {/* New Unit Inline */}
-            <div className="flex gap-2 p-1 bg-slate-50 border border-slate-200 rounded-xl items-center">
+            {/* Unit Selection */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">
+                Unit
+              </label>
+              <select
+                value={unit}
+                onChange={(e) => setUnit(e.target.value)}
+                required
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:bg-white outline-none transition-all cursor-pointer"
+              >
+                <option value="" disabled>Select unit</option>
+                {units.map((u) => (
+                  <option key={u} value={u}>
+                    {u}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Add Custom Unit */}
+            <div className="flex gap-2">
               <input
                 type="text"
-                placeholder="New unit..."
+                placeholder="Add custom unit"
                 value={newUnit}
                 onChange={(e) => setNewUnit(e.target.value)}
-                className="flex-1 bg-transparent px-3 py-1.5 text-sm outline-none"
+                className="flex-1 px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl outline-none"
               />
               <button
                 type="button"
                 onClick={onAddUnit}
-                className="bg-white border border-slate-200 text-slate-700 text-[10px] uppercase tracking-widest font-black px-3 py-2 rounded-lg shadow-sm hover:bg-green-50 hover:text-green-600 transition-all active:scale-95"
+                className="px-4 py-2 bg-slate-100 text-slate-700 font-medium text-sm rounded-xl hover:bg-slate-200 transition-all flex items-center gap-1"
               >
-                + Add
+                <Plus size={16} /> Add
               </button>
             </div>
 
-            {/* Price */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">
-                Unit Price (৳)
-              </label>
-              <input
-                type="number"
-                placeholder="0.00"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                required
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2  focus:bg-white outline-none transition-all font-medium"
-              />
+            {/* Total Display */}
+            <div className="pt-2 flex justify-between items-center text-slate-700 font-semibold">
+              <span>Total:</span>
+              <span className="text-lg text-green-600">৳{total.toFixed(2)}</span>
             </div>
 
-            {/* Total Display */}
-            {total > 0 && (
-              <div className="bg-slate-900 rounded-2xl p-5 flex justify-between items-center text-white ring-4 ring-slate-50 animate-in fade-in zoom-in-95 duration-300">
-                <div className="flex flex-col">
-                  <span className="text-[10px] uppercase tracking-tighter text-slate-400 font-bold">
-                    Line Subtotal
-                  </span>
-                  <span className="text-sm font-medium text-slate-200 italic">calculated</span>
-                </div>
-                <span className="text-2xl font-black tracking-tight text-green-400">
-                  ৳ {total.toLocaleString()}
-                </span>
-              </div>
-            )}
-
-            {/* Action Button */}
+            {/* Submit Button */}
             <button
               type="submit"
-              className="w-full py-4  bg-black text-white rounded-xl font-bold text-lg  shadow-xl  active:scale-[0.97] transition-all duration-300 flex items-center justify-center gap-2 mt-4"
+              className="w-full py-3.5 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-xl shadow-lg shadow-green-200 transition-all"
             >
-              <Plus size={20} strokeWidth={3} /> Save Item
+              Add to Invoice
             </button>
           </form>
         </div>
@@ -186,4 +299,3 @@ const AddItemPage=()=> {
     </div>
   );
 }
-export default AddItemPage

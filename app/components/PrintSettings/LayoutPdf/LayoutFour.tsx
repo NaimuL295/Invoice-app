@@ -54,7 +54,6 @@ const styles = StyleSheet.create({
   metaValue: {
     fontWeight: "bold",
   },
-  // Rigid flex layouts forcing text to align neatly like a real register
   tableHeader: {
     flexDirection: "row",
     borderBottomWidth: 1,
@@ -69,15 +68,22 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     alignItems: "flex-start",
   },
-  colDescription: { 
-    flex: 2.2, 
+  colDescription: {
+    flex: 2.2,
     paddingRight: 2,
-    wordWrap: "break-word" 
   },
-  colQty: { flex: 0.5, textAlign: "center" },
-  colPrice: { flex: 1, textAlign: "right" },
-  colTotal: { flex: 1.1, textAlign: "right" },
-  
+  colQty: { 
+    flex: 0.5, 
+    textAlign: "center" 
+  },
+  colPrice: { 
+    flex: 1, 
+    textAlign: "right" 
+  },
+  colTotal: { 
+    flex: 1.1, 
+    textAlign: "right" 
+  },
   summarySection: {
     marginTop: 4,
     paddingTop: 4,
@@ -105,7 +111,6 @@ const styles = StyleSheet.create({
   wordsText: {
     marginTop: 6,
     fontSize: 7.5,
-    fontStyle: "italic",
     textAlign: "center",
     textTransform: "capitalize",
     paddingHorizontal: 4,
@@ -115,7 +120,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: 8,
     fontWeight: "bold",
-  }
+  },
 });
 
 export default function LayoutFour({ title, data }: LayoutProps) {
@@ -145,7 +150,7 @@ export default function LayoutFour({ title, data }: LayoutProps) {
   let wordsRepresentation = "";
   if (invoiceData.total > 0) {
     try {
-      wordsRepresentation = toWords(invoiceData.total) + " Taka Only";
+      wordsRepresentation = `${toWords(invoiceData.total)} Taka Only`;
     } catch (e) {
       wordsRepresentation = "";
     }
@@ -153,14 +158,14 @@ export default function LayoutFour({ title, data }: LayoutProps) {
 
   return (
     <Document>
-      {/* Width: 226pt matches standard 80mm thermal rolls. Responsive dynamic height context. */}
       <Page size={{ width: 226 }} style={styles.page}>
-        
         {/* Top Header Block */}
         <View style={styles.headerWrapper}>
           <Text style={styles.companyName}>{invoiceData.user_name}</Text>
           {invoiceData.companyEmail ? (
-            <Text style={{ fontSize: 7, marginBottom: 2 }}>{invoiceData.companyEmail}</Text>
+            <Text style={{ fontSize: 7, marginBottom: 2 }}>
+              {invoiceData.companyEmail}
+            </Text>
           ) : null}
           <Text style={styles.receiptTitle}>{title || "Cash Receipt"}</Text>
         </View>
@@ -196,7 +201,7 @@ export default function LayoutFour({ title, data }: LayoutProps) {
             const itemTotal = qty * price;
 
             return (
-              <View style={styles.tableRow} key={index}>
+              <View style={styles.tableRow} key={item.id || index}>
                 <Text style={styles.colDescription}>{item.item_name}</Text>
                 <Text style={styles.colQty}>{qty}</Text>
                 <Text style={styles.colPrice}>{price.toFixed(1)}</Text>
@@ -212,15 +217,16 @@ export default function LayoutFour({ title, data }: LayoutProps) {
             <Text>Subtotal:</Text>
             <Text>{invoiceData.subtotal.toFixed(2)}</Text>
           </View>
-          
+
           {invoiceData.discount > 0 && (
             <View style={styles.summaryRow}>
               <Text>Discount ({invoiceData.discount}%):</Text>
-              <Text>-{((invoiceData.subtotal * invoiceData.discount) / 100).toFixed(2)}</Text>
+              <Text>
+                -{((invoiceData.subtotal * invoiceData.discount) / 100).toFixed(2)}
+              </Text>
             </View>
           )}
 
-          {/* Fixed line to use standard clean 'Tk.' token alignment */}
           <View style={styles.boldSummaryRow}>
             <Text>NET TOTAL:</Text>
             <Text>Tk. {invoiceData.total.toFixed(2)}</Text>
@@ -233,20 +239,19 @@ export default function LayoutFour({ title, data }: LayoutProps) {
 
           <View style={styles.summaryRow}>
             <Text style={{ fontWeight: due > 0 ? "bold" : "normal" }}>Due:</Text>
-            <Text style={{ fontWeight: due > 0 ? "bold" : "normal" }}>{due.toFixed(2)}</Text>
+            <Text style={{ fontWeight: due > 0 ? "bold" : "normal" }}>
+              {due.toFixed(2)}
+            </Text>
           </View>
         </View>
 
         {/* Verbal Translation Render */}
         {wordsRepresentation ? (
-          <Text style={styles.wordsText}>
-            {wordsRepresentation}
-          </Text>
+          <Text style={styles.wordsText}>{wordsRepresentation}</Text>
         ) : null}
 
         {/* Footer */}
         <Text style={styles.footerMessage}>THANK YOU FOR YOUR VISIT</Text>
-
       </Page>
     </Document>
   );

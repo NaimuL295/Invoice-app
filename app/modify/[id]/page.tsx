@@ -342,11 +342,10 @@ export default function ModifyPage({ params }: { params: Promise<{ id: string }>
 
               <label className="flex justify-between items-center bg-white p-3 rounded-lg shadow-sm border border-gray-100 cursor-pointer">
                 <div
-                  className={`w-6 h-6 rounded-full border-2 flex-shrink-0 transition-all ${
-                    Number(received) > 0
+                  className={`w-6 h-6 rounded-full border-2 flex-shrink-0 transition-all ${Number(received) > 0
                       ? "bg-yellow-400 border-yellow-500"
                       : "border-gray-300"
-                  }`}
+                    }`}
                 ></div>
                 <span className="font-medium">Received Amount</span>
                 <input
@@ -364,9 +363,8 @@ export default function ModifyPage({ params }: { params: Promise<{ id: string }>
               <div className="flex justify-between px-3">
                 <span className="font-medium text-gray-600">Balance Due</span>
                 <span
-                  className={`font-bold ${
-                    balance > 0 ? "text-red-500" : "text-gray-500"
-                  }`}
+                  className={`font-bold ${balance > 0 ? "text-red-500" : "text-gray-500"
+                    }`}
                 >
                   ৳{balance.toLocaleString()}
                 </span>
@@ -381,11 +379,10 @@ export default function ModifyPage({ params }: { params: Promise<{ id: string }>
                 {["Cash", "Bkash", "Nagad", "Card", "Bank"].map((method) => (
                   <label
                     key={method}
-                    className={`cursor-pointer px-4 py-2 rounded-full border transition-all ${
-                      paymentType === method
+                    className={`cursor-pointer px-4 py-2 rounded-full border transition-all ${paymentType === method
                         ? "bg-yellow-400 text-white border-yellow-500"
                         : "border-gray-300 text-gray-700"
-                    }`}
+                      }`}
                   >
                     <input
                       type="radio"

@@ -17,7 +17,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#ffffff",
   },
   headerSection: {
-    backgroundColor: "#9ca3af", 
+    backgroundColor: "#9ca3af",
     flexDirection: "row",
     justifyContent: "space-between",
     padding: 15,
@@ -120,7 +120,7 @@ export default function LayoutTwo({ title, data }: LayoutProps) {
     received: Number(data?.received) || 0,
     discount: Number(data?.discount) || 0,
     subtotal: Number(data?.subtotal || data?.total) || 0,
-    user: data?.user || null, 
+    user: data?.user || null,
     total: Number(data?.total) || 0,
   };
 
@@ -139,7 +139,7 @@ export default function LayoutTwo({ title, data }: LayoutProps) {
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        
+
         {/* Header Section */}
         <View style={styles.headerSection}>
           <View><Text style={{ color: 'white' }}>Logo</Text></View>
@@ -159,7 +159,7 @@ export default function LayoutTwo({ title, data }: LayoutProps) {
           <Text style={{ width: '50%' }}>Bill To</Text>
           <Text style={{ width: '50%', textAlign: 'right' }}>Invoice Details</Text>
         </View>
-        
+
         <View style={styles.infoContent}>
           <Text style={{ fontWeight: 'bold' }}>{invoiceData.billTo}</Text>
           <View>
@@ -210,7 +210,7 @@ export default function LayoutTwo({ title, data }: LayoutProps) {
           <View style={styles.summaryBox}>
             <Text style={styles.amountWordsLabel}>Invoice Amount In Words:</Text>
             <Text style={{ marginBottom: 15, textTransform: 'capitalize' }}>{getAmountInWords()}</Text>
-            
+
             <Text style={styles.amountWordsLabel}>Terms and Conditions</Text>
             <Text style={{ fontSize: 8, color: '#555' }}>Thank you for doing business with us.</Text>
           </View>

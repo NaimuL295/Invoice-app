@@ -215,11 +215,10 @@ export default function CreatePage() {
               {["Cash", "Bkash", "Card", "Bank"].map((method) => (
                 <label
                   key={method}
-                  className={`cursor-pointer px-4 py-2 rounded-xl border-2 text-sm font-bold transition-all ${
-                    paymentType === method
+                  className={`cursor-pointer px-4 py-2 rounded-xl border-2 text-sm font-bold transition-all ${paymentType === method
                       ? "bg-black text-white border-black"
                       : "bg-white border-gray-200 text-gray-500 hover:border-gray-300"
-                  }`}
+                    }`}
                 >
                   <input
                     type="radio"

@@ -57,9 +57,9 @@ const styles = StyleSheet.create({
     padding: 5,
     borderRight: "1pt solid #ccc",
   },
-  label: { 
-    fontWeight: "bold", 
-    marginBottom: 2 
+  label: {
+    fontWeight: "bold",
+    marginBottom: 2
   },
   tableRow: {
     flexDirection: "row",
@@ -227,13 +227,13 @@ export default function LayoutThree({ title, data }: LayoutProps) {
               <Text style={{ marginBottom: 12, color: "#555" }}>
                 {renderAmountInWords()}
               </Text>
-              
+
               <Text style={{ fontWeight: "bold" }}>Terms And Conditions:</Text>
               <Text style={{ marginTop: 5, color: "#666" }}>
                 Thank you for doing business with us.
               </Text>
             </View>
-            
+
             <View style={styles.summaryRight}>
               <View style={styles.summaryRow}>
                 <Text>Sub Total:</Text>

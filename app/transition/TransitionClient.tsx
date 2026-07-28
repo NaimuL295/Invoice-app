@@ -138,11 +138,10 @@ export default function TransitionClient({
 
               <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t border-gray-50 sm:border-0">
                 <span
-                  className={`text-[10px] px-2.5 py-1 rounded-full font-bold tracking-wider ${
-                    due > 0
+                  className={`text-[10px] px-2.5 py-1 rounded-full font-bold tracking-wider ${due > 0
                       ? "bg-red-50 text-red-600"
                       : "bg-green-50 text-green-600"
-                  }`}
+                    }`}
                 >
                   {due > 0 ? "UNPAID" : "PAID"}
                 </span>

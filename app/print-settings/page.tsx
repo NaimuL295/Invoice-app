@@ -23,8 +23,8 @@ const layouts = [
   },
   {
     id: "4",
-    title: "Elegant",
-    description: "Sophisticated styling with refined typography.",
+    title: "PosPrint ",
+    description: "Pos Print.",
   },
   {
     id: "5",
@@ -125,11 +125,10 @@ export default function PrintSettings() {
                 onClick={() => setLayout(item.id)}
                 className={`relative rounded-2xl border-2 p-6 transition-all duration-300 text-left hover:scale-[1.02]
 
-                ${
-                  layout === item.id
+                ${layout === item.id
                     ? "border-blue-600 bg-blue-50  shadow-lg"
                     : "border-gray-200 dark:border-gray-700 hover:border-blue-400"
-                }
+                  }
                 `}
               >
                 {layout === item.id && (

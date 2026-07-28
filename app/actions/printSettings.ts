@@ -39,9 +39,9 @@ export async function updatePrintSettings(layout: string) {
       data: { printLayout: layout },
     });
 
-    return { 
-      message: "Settings updated", 
-      layout: updatedUser.printLayout 
+    return {
+      message: "Settings updated",
+      layout: updatedUser.printLayout,
     };
   } catch (error) {
     console.error("[UPDATE_PRINT_SETTINGS_ERROR]:", error);

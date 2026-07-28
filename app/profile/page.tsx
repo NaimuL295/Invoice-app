@@ -38,7 +38,7 @@ const Profile = () => {
             <div className="absolute -top-12 left-0 p-1 bg-white rounded-2xl shadow-md">
               <div className="h-24 w-24 bg-slate-200 rounded-xl flex items-center justify-center text-slate-500 overflow-hidden">
                 {session.user.image ? (
-                  <img  src={session?.user.image}
+                  <img src={session?.user.image}
                     alt={session?.user.name || "User"}
                     className="h-full w-full object-cover"
                   />

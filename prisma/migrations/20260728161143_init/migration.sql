@@ -75,11 +75,24 @@ CREATE TABLE "Item" (
     "id" SERIAL NOT NULL,
     "item_name" TEXT NOT NULL,
     "quantity" INTEGER NOT NULL,
-    "unit" TEXT NOT NULL,
+    "unit" TEXT,
     "price" DOUBLE PRECISION NOT NULL,
     "invoiceId" INTEGER NOT NULL,
 
     CONSTRAINT "Item_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "products" (
+    "id" SERIAL NOT NULL,
+    "item_name" TEXT NOT NULL,
+    "category" TEXT NOT NULL,
+    "unit" TEXT NOT NULL DEFAULT 'Pieces (pcs)',
+    "price" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "userId" INTEGER NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "products_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -114,3 +127,6 @@ ALTER TABLE "Invoice" ADD CONSTRAINT "Invoice_userId_fkey" FOREIGN KEY ("userId"
 
 -- AddForeignKey
 ALTER TABLE "Item" ADD CONSTRAINT "Item_invoiceId_fkey" FOREIGN KEY ("invoiceId") REFERENCES "Invoice"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "products" ADD CONSTRAINT "products_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;

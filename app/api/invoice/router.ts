@@ -1,9 +1,8 @@
-"use server" // KEEP this here
+"use server"; // KEEP this here
 
 import { Item } from "@/app/store/useInvoiceStore";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-
 
 // 1. Change the function name and accept raw data instead of a Request object
 export async function createInvoice(data: {
@@ -59,14 +58,14 @@ export async function createInvoice(data: {
     });
 
     // 3. Return the data directly
-    return invoiceCreate; 
-} catch (error: unknown) {
+    return invoiceCreate;
+  } catch (error: unknown) {
     console.error("Prisma Creation Error:", error);
-    
+
     if (error instanceof Error) {
       throw new Error(error.message);
     }
-    
+
     throw new Error("An unexpected error occurred.");
   }
 }
