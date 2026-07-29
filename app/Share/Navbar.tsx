@@ -101,43 +101,44 @@ export default function Navbar() {
       </aside>
 
       {/* --- MOBILE BOTTOM BAR --- */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-6 py-2 z-50 shadow-lg">
-        <ul className="flex justify-between items-center max-w-md mx-auto">
-          <MobileTab
-            href="/transition"
-            icon={<LayoutDashboard size={22} />}
-            active={pathname === "/transition" || pathname === "/"}
-          />
+    {/* --- MOBILE BOTTOM BAR --- */}
+<nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-6 py-1 z-50 shadow-lg">
+  <ul className="flex justify-between items-center max-w-md mx-auto">
+    <MobileTab
+      href="/transition"
+      icon={<LayoutDashboard size={18} />}
+      active={pathname === "/transition" || pathname === "/"}
+    />
 
-          <MobileTab
-            href="/allproducts"
-            icon={<Boxes size={22} />}
-            active={pathname === "/allproducts"}
-          />
+    <MobileTab
+      href="/allproducts"
+      icon={<Boxes size={18} />}
+      active={pathname === "/allproducts"}
+    />
 
-          {/* Floating Action Button */}
-          <li className="-mt-10">
-            <Link
-              href="/create"
-              className="flex items-center justify-center bg-green-600 p-3.5 rounded-full text-white shadow-lg shadow-green-200 border-4 border-white active:scale-95 transition-transform"
-            >
-              <PlusCircle size={26} />
-            </Link>
-          </li>
+    {/* Floating Action Button */}
+    <li className="-mt-6">
+      <Link
+        href="/create"
+        className="flex items-center justify-center bg-green-600 p-2.5 rounded-full text-white shadow-lg shadow-green-200 border-4 border-white active:scale-95 transition-transform"
+      >
+        <PlusCircle size={20} />
+      </Link>
+    </li>
 
-          <MobileTab
-            href="/print-settings"
-            icon={<FilePenLine size={22} />}
-            active={pathname === "/print-settings"}
-          />
+    <MobileTab
+      href="/print-settings"
+      icon={<FilePenLine size={18} />}
+      active={pathname === "/print-settings"}
+    />
 
-          <MobileTab
-            href="/profile"
-            icon={<UserRoundPen size={22} />}
-            active={pathname === "/profile"}
-          />
-        </ul>
-      </nav>
+    <MobileTab
+      href="/profile"
+      icon={<UserRoundPen size={18} />}
+      active={pathname === "/profile"}
+    />
+  </ul>
+</nav>
     </>
   );
 }

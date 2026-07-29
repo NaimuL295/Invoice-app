@@ -103,7 +103,7 @@ export default function CreatePage() {
   );
 
   return (
-    <div className="max-w-5xl lg:mx-auto p-2 sm:p-8">
+<div className="max-w-5xl lg:mx-auto p-2 sm:p-20 pb-24 md:pb-20">
       <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-2 gap-10">
         {/* LEFT COLUMN */}
         <div className="space-y-4">
