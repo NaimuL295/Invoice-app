@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -10,13 +10,14 @@ import { useInvoiceStore } from "../store/useInvoiceStore";
 import InvoiceItems from "../Share/InvoiceItems";
 import { createInvoice } from "../actions/invoiceActions";
 
+type DiscountType = "percentage" | "flat";
 
 export default function CreatePage() {
   const { data: session } = useSession();
   const router = useRouter();
 
-  const { setItems } = useInvoiceStore();
   const items = useInvoiceStore((state) => state.items);
+  const setItems = useInvoiceStore((state) => state.setItems);
 
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [customer, setCustomer] = useState("");
@@ -24,67 +25,83 @@ export default function CreatePage() {
     String(crypto.randomUUID().split("-")[0])
   );
   const [discount, setDiscount] = useState<number | "">("");
+  const [discountType, setDiscountType] = useState<DiscountType>("percentage");
   const [received, setReceived] = useState<number | "">("");
   const [paymentType, setPaymentType] = useState("Cash");
   const [description, setDescription] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const subtotal = items.reduce((acc, item) => acc + item.quantity * item.price, 0);
-  const total = subtotal - (subtotal * Number(discount || 0)) / 100;
-  const balance = total - Number(received || 0);
+  const { subtotal, discountAmount, total, balance } = useMemo(() => {
+    const subtotal = items.reduce((acc, item) => acc + item.quantity * item.price, 0);
 
+    const discountAmount =
+      discountType === "percentage"
+        ? (subtotal * Number(discount || 0)) / 100
+        : Number(discount || 0);
 
+    // discount amount subtotal-এর বেশি হলে ক্যাপ করা
+    const cappedDiscount = Math.min(discountAmount, subtotal);
+    const total = subtotal - cappedDiscount;
+    const balance = total - Number(received || 0);
 
+    return { subtotal, discountAmount: cappedDiscount, total, balance };
+  }, [items, discount, discountType, received]);
 
-  const handleSubmit = async (e: React.FormEvent): Promise<void> => {
-    e.preventDefault();
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent): Promise<void> => {
+      e.preventDefault();
 
-    if (!customer || items.length === 0) {
-      toast.error("Customer and items required!");
-      return;
-    }
+      if (isSubmitting) return;
 
-    if (!session?.user) {
-      toast.error("Please log in again.");
-      return;
-    }
+      if (!customer || items.length === 0) {
+        toast.error("Customer and items required!");
+        return;
+      }
 
-    const invoiceData = {
-      uid: String(invoiceId),
-      date,
-      customer,
-      items,
-      subtotal,
-      discount,
-      total,
-      received,
-      due: balance,
-      description,
-      paymentType,
-    };
+      if (!session?.user) {
+        toast.error("Please log in again.");
+        return;
+      }
 
-    const loadingToast = toast.loading("Creating invoice...");
+      const invoiceData = {
+        uid: String(invoiceId),
+        date,
+        customer,
+        items,
+        subtotal,
+        discount: discountAmount, // সবসময় calculated flat amount পাঠানো হচ্ছে
+        discountType,
+        total,
+        received,
+        due: balance,
+        description,
+        paymentType,
+      };
 
-    try {
-      // 2. FIX: Use invoiceData, not data
-      // 3. FIX: No res.ok check - just await the result
-      await createInvoice(invoiceData);
+      setIsSubmitting(true);
+      const loadingToast = toast.loading("Creating invoice...");
 
-      setItems([]);
-      toast.success("Invoice created successfully! 🎉", { id: loadingToast });
+      try {
+        await createInvoice(invoiceData);
 
-      router.push("/");
-      setCustomer("");
-      setDiscount(0);
-      setReceived(0);
-    } catch (error) {
-      console.error("Error creating invoice:", error);
-      // 4. FIX: Get the actual error message
-      const message = error instanceof Error ? error.message : "Something went wrong!";
-      toast.error(message, { id: loadingToast });
-    }
-  };
+        setItems([]);
+        toast.success("Invoice created successfully! 🎉", { id: loadingToast });
 
-  // ... rest of JSX stays the same
+        router.push("/");
+        setCustomer("");
+        setDiscount("");
+        setReceived("");
+      } catch (error) {
+        console.error("Error creating invoice:", error);
+        const message = error instanceof Error ? error.message : "Something went wrong!";
+        toast.error(message, { id: loadingToast });
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [isSubmitting, customer, items, session, invoiceId, date, subtotal, discountAmount, discountType, total, received, description, paymentType, setItems, router]
+  );
+
   return (
     <div className="max-w-5xl lg:mx-auto p-2 sm:p-8">
       <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-2 gap-10">
@@ -160,24 +177,64 @@ export default function CreatePage() {
 
           <div className="space-y-3 border-b border-gray-200 pb-4">
             <div className="flex justify-between items-center text-gray-600">
-              <span>Discount Amount</span>
-              <div className="flex items-center gap-2 bg-white px-3 py-1 rounded-lg border border-gray-200">
-                <span className="text-xs text-gray-400 font-bold">৳</span>
-                <input
-                  type="number"
-                  value={discount}
-                  onChange={(e) =>
-                    setDiscount(e.target.value === "" ? "" : Number(e.target.value))
-                  }
-                  className="w-20 text-right outline-none font-medium"
-                />
+              <span>Discount</span>
+              <div className="flex items-center gap-1.5">
+                {/* Percentage/Flat toggle */}
+                <div className="flex bg-slate-100 rounded-lg p-0.5">
+                  <button
+                    type="button"
+                    onClick={() => setDiscountType("percentage")}
+                    className={`px-2 py-1 text-xs font-bold rounded-md transition-all ${
+                      discountType === "percentage"
+                        ? "bg-black text-white"
+                        : "text-gray-500"
+                    }`}
+                  >
+                    %
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDiscountType("flat")}
+                    className={`px-2 py-1 text-xs font-bold rounded-md transition-all ${
+                      discountType === "flat"
+                        ? "bg-black text-white"
+                        : "text-gray-500"
+                    }`}
+                  >
+                    ৳
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-2 bg-white px-3 py-1 rounded-lg border border-gray-200">
+                  <span className="text-xs text-gray-400 font-bold">
+                    {discountType === "percentage" ? "%" : "৳"}
+                  </span>
+                  <input
+                    type="number"
+                    value={discount}
+                    onChange={(e) =>
+                      setDiscount(e.target.value === "" ? "" : Number(e.target.value))
+                    }
+                    min="0"
+                    max={discountType === "percentage" ? 100 : undefined}
+                    className="w-20 text-right outline-none font-medium"
+                  />
+                </div>
               </div>
             </div>
 
+            {/* Discount amount preview */}
+            {discountAmount > 0 && (
+              <div className="flex justify-between text-xs text-gray-400 px-1">
+                <span>Discount Applied</span>
+                <span>- ৳{discountAmount.toLocaleString()}</span>
+              </div>
+            )}
+
             <div className="flex justify-between items-center pt-2">
               <span className="text-xl font-black text-gray-900">Total Amount</span>
-              <span className="text-2xl font-black text-yellow-600">
-                ৳{total?.toLocaleString()}
+              <span className="text-2xl font-black text-red-500">
+                ৳{total.toLocaleString()}
               </span>
             </div>
           </div>
@@ -196,7 +253,7 @@ export default function CreatePage() {
                   onChange={(e) =>
                     setReceived(e.target.value === "" ? "" : Number(e.target.value))
                   }
-                  className="w-full text-2xl font-bold text-green-600 outline-none"
+                  className="w-full text-2xl font-bold  outline-none"
                 />
               </div>
             </div>
@@ -204,7 +261,7 @@ export default function CreatePage() {
             <div className="flex justify-between px-2">
               <span className="font-semibold text-gray-500">Balance Due</span>
               <span className={`font-bold text-lg ${balance > 0 ? "text-red-500" : "text-gray-400"}`}>
-                ৳{balance?.toLocaleString()}
+                ৳{balance.toLocaleString()}
               </span>
             </div>
           </div>
@@ -248,9 +305,10 @@ export default function CreatePage() {
           <div className="flex gap-3 pt-4">
             <button
               type="submit"
-              className="grow py-4 bg-black text-white rounded-2xl font-bold hover:bg-gray-800 transition-all shadow-xl active:scale-95"
+              disabled={isSubmitting}
+              className="grow py-4 bg-black text-white rounded-2xl font-bold hover:bg-gray-800 transition-all shadow-xl active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Save Invoice
+              {isSubmitting ? "Saving..." : "Save Invoice"}
             </button>
             <button
               type="button"

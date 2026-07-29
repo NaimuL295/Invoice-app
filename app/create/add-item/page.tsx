@@ -179,7 +179,7 @@ export default function AddItemPage() {
                             <p className="text-[11px] text-slate-400">{s.category}</p>
                           )}
                         </div>
-                        <span className="text-sm font-semibold text-green-600">
+                        <span className="text-sm font-semibold ">
                           ৳{s.price}
                         </span>
                       </button>
@@ -283,7 +283,7 @@ export default function AddItemPage() {
             {/* Total Display */}
             <div className="pt-2 flex justify-between items-center text-slate-700 font-semibold">
               <span>Total:</span>
-              <span className="text-lg text-green-600">৳{total.toFixed(2)}</span>
+              <span className="text-lg ">৳{total.toFixed(2)}</span>
             </div>
 
             {/* Submit Button */}
