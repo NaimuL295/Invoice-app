@@ -1,6 +1,6 @@
 "use client"; // 🟩 Essential for Next.js Client Component compilation
 
-import { Document, Page, View, Text, StyleSheet } from "@react-pdf/renderer";
+import { Document, Page, View, Text, Image, StyleSheet } from "@react-pdf/renderer";
 import { Invoice, Item } from "@/types/next-auth";
 import { toWords } from 'to-words';
 
@@ -20,9 +20,15 @@ const styles = StyleSheet.create({
     backgroundColor: "#9ca3af",
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "center",
     padding: 15,
     color: "black",
     marginBottom: 10,
+  },
+  logoImage: {
+    width: 60,
+    height: 40,
+    objectFit: "contain",
   },
   companyName: {
     fontSize: 14,
@@ -142,9 +148,16 @@ export default function LayoutTwo({ title, data }: LayoutProps) {
 
         {/* Header Section */}
         <View style={styles.headerSection}>
-          <View><Text style={{ color: 'white' }}>Logo</Text></View>
           <View>
-            {/* 🟩 Patched crash vector using optional chaining & template fallback */}
+            {/* 🟩 সঠিকভাবে Image Component ব্যবহার এবং Optional Chaining যোগ করা হয়েছে */}
+            {invoiceData.user?.image ? (
+              // eslint-disable-next-line jsx-a11y/alt-text
+              <Image src={invoiceData.user.image} style={styles.logoImage} />
+            ) : (
+              <Text style={{ color: "white", fontWeight: "bold" }}>Logo</Text>
+            )}
+          </View>
+          <View>
             <Text style={styles.companyName}>
               {invoiceData.user?.email || invoiceData.user_name}
             </Text>
@@ -247,7 +260,7 @@ export default function LayoutTwo({ title, data }: LayoutProps) {
         {/* Footer Area */}
         <View style={{ marginTop: 40, alignItems: 'flex-end' }}>
           <View style={{ borderTopWidth: 1, borderTopColor: '#000', width: 150, paddingTop: 5 }}>
-            <Text style={{ textAlign: 'center', fontSize: 9 }}>Authorized Signatory</Text>
+            <Text style={{ textAlign: 'center', fontSize: 9 }}>Authorized Signatory </Text>
           </View>
         </View>
 

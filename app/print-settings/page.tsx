@@ -5,7 +5,13 @@ import { getPrintSettings, updatePrintSettings } from "@/app/actions/printSettin
 import toast from "react-hot-toast";
 import { CheckCircle2, LayoutTemplate, Save } from "lucide-react";
 
-const layouts = [
+export interface InvoiceLayout {
+  id: string;
+  title: string;
+  description: string;
+}
+
+export const layouts: InvoiceLayout[] = [
   {
     id: "1",
     title: "Classic",
@@ -14,25 +20,24 @@ const layouts = [
   {
     id: "2",
     title: "Modern",
-    description: "Modern design with bold headers and spacing.",
+    description: "Modern design with bold headers and clear spacing.",
   },
   {
     id: "3",
     title: "Minimal",
-    description: "Simple layout focused on readability.",
+    description: "Simple, elegant layout focused on readability.",
   },
   {
     id: "4",
-    title: "PosPrint ",
-    description: "Pos Print.",
+    title: "POS Print", // 🟩 Extra trailing space removed & clean label
+    description: "Thermal receipt format tailored for POS systems.",
   },
   {
     id: "5",
     title: "Compact",
-    description: "Dense structure optimized for space or thermal prints.",
+    description: "Dense structure optimized for saving paper and space.",
   },
 ];
-
 export default function PrintSettings() {
   const [layout, setLayout] = useState("1");
   const [loading, setLoading] = useState(true);
@@ -126,7 +131,7 @@ export default function PrintSettings() {
                 className={`relative rounded-2xl border-2 p-6 transition-all duration-300 text-left hover:scale-[1.02]
 
                 ${layout === item.id
-                    ? "border-blue-600 bg-blue-50  shadow-lg"
+                    ? "border-green-500 bg-blue-50  shadow-lg"
                     : "border-gray-200 dark:border-gray-700 hover:border-blue-400"
                   }
                 `}
@@ -172,7 +177,7 @@ export default function PrintSettings() {
             <button
               onClick={handleSave}
               disabled={isSaving}
-              className="flex items-center gap-2 rounded-xl  px-8 py-3  font-semibold hover:bg-blue-700 disabled:opacity-60 transition"
+              className="flex items-center gap-2 rounded-xl bg-green-500 text-white  px-8 py-3  font-semibold hover:bg-green-600 disabled:opacity-60 transition"
             >
               <Save size={18} />
               {isSaving ? "Saving..." : "Save Settings"}

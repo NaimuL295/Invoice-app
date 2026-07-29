@@ -1,6 +1,6 @@
 "use client"; // 🟩 Essential for Next.js Client Component compilation
 
-import { Document, Page, View, Text, StyleSheet } from "@react-pdf/renderer";
+import { Document, Page, View, Text, Image, StyleSheet } from "@react-pdf/renderer";
 import { Invoice, Item } from "@/types/next-auth";
 import { toWords } from 'to-words';
 
@@ -20,9 +20,20 @@ const styles = StyleSheet.create({
     backgroundColor: "#9ca3af",
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "center",
     padding: 15,
     color: "black",
     marginBottom: 10,
+  },
+  logoImage: {
+    width: 60,
+    height: 40,
+    objectFit: "contain",
+  },
+  logoFallback: {
+    color: "white",
+    fontWeight: "bold",
+    fontSize: 12,
   },
   companyName: {
     fontSize: 14,
@@ -142,11 +153,18 @@ export default function LayoutTwo({ title, data }: LayoutProps) {
 
         {/* Header Section */}
         <View style={styles.headerSection}>
-          <View><Text style={{ color: 'white' }}>Logo</Text></View>
           <View>
-            {/* 🟩 Patched crash vector using optional chaining & template fallback */}
+            {/* 🟩 ডায়নামিক লোগো সাপোর্ট যোগ করা হয়েছে */}
+            {invoiceData.user?.image ? (
+              // eslint-disable-next-line jsx-a11y/alt-text
+              <Image src={invoiceData.user.image} style={styles.logoImage} />
+            ) : (
+              <Text style={styles.logoFallback}>Logo</Text>
+            )}
+          </View>
+          <View>
             <Text style={styles.companyName}>
-              {invoiceData.user?.email || invoiceData.user_name}
+              {invoiceData.user?.user_name || invoiceData.user?.email || invoiceData.user_name}
             </Text>
             <Text style={{ textAlign: 'right', fontSize: 8 }}>Email: {invoiceData.companyEmail}</Text>
           </View>
@@ -165,7 +183,6 @@ export default function LayoutTwo({ title, data }: LayoutProps) {
           <View>
             <Text style={{ textAlign: 'right' }}>Invoice No.: {invoiceData.invoiceNo}</Text>
             <Text style={{ textAlign: 'right' }}>Date: {invoiceData.date}</Text>
-
           </View>
         </View>
 
