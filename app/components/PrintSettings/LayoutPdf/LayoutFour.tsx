@@ -167,7 +167,7 @@ export default function LayoutFour({ title, data }: LayoutProps) {
               {invoiceData.companyEmail}
             </Text>
           ) : null}
-          <Text style={styles.receiptTitle}>{title || "Cash Receipt"}</Text>
+          <Text style={styles.receiptTitle}>{title || "Invoice Details"}</Text>
         </View>
 
         {/* Invoice Metadata */}

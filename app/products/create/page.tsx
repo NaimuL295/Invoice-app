@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useTransition, useRef } from "react";
-import { Tag, Plus, Pencil, Trash2, X, Search } from "lucide-react";
+import { Tag, Plus, Pencil, Trash2, X, Search, Loader2 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { createProduct, updateProduct, deleteProduct, searchProducts } from "../../actions/products";
 
@@ -24,6 +24,8 @@ export default function ProductPage({
   const [isPending, startTransition] = useTransition();
 
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  
   const [itemName, setItemName] = useState("");
   const [category, setCategory] = useState("");
   const [newCategory, setNewCategory] = useState("");
@@ -76,8 +78,7 @@ export default function ProductPage({
     setPrice(String(p.price));
   };
 
-  const onDelete = (id: number) => {
-    if (!confirm("Delete this item?")) return;
+  const handleDelete = (id: number) => {
     startTransition(async () => {
       try {
         await deleteProduct(id);
@@ -86,6 +87,8 @@ export default function ProductPage({
         toast.success("Item deleted");
       } catch {
         toast.error("Delete failed");
+      } finally {
+        setDeletingId(null);
       }
     });
   };
@@ -121,7 +124,7 @@ export default function ProductPage({
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex justify-center p-4 md:p-6">
+    <div className="min-h-screen bg-slate-50 flex justify-center p-4 md:p-6 relative">
       <div className="w-full max-w-2xl space-y-6">
         {/* Form Card */}
         <div className="bg-white rounded-[1.618rem] shadow-xl shadow-slate-200/60 border border-slate-100 overflow-hidden">
@@ -275,7 +278,7 @@ export default function ProductPage({
                         <Pencil size={16} />
                       </button>
                       <button
-                        onClick={() => onDelete(p.id)}
+                        onClick={() => setDeletingId(p.id)}
                         className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
                       >
                         <Trash2 size={16} />
@@ -288,6 +291,39 @@ export default function ProductPage({
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {deletingId !== null && (
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-[1.618rem] max-w-sm w-full p-6 shadow-2xl border border-slate-100 text-center space-y-4">
+            <div className="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto">
+              <Trash2 size={24} />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-slate-900">Delete Product?</h3>
+              <p className="text-xs text-slate-500 mt-1">This action cannot be undone from your database.</p>
+            </div>
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setDeletingId(null)}
+                className="flex-1 py-2.5 border border-slate-200 text-slate-600 font-semibold text-sm rounded-xl hover:bg-slate-50 transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDelete(deletingId)}
+                disabled={isPending}
+                className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white font-semibold text-sm rounded-xl shadow-lg shadow-red-200 flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+              >
+                {isPending && <Loader2 size={16} className="animate-spin" />}
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
