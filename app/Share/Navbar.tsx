@@ -10,6 +10,7 @@ import {
   LayoutDashboard,
   ReceiptText,
   FilePenLine,
+  GalleryVerticalEnd,
   LogIn,
   LogOut,
   PackagePlus,
@@ -28,15 +29,13 @@ export default function Navbar() {
     <>
       {/* --- DESKTOP SIDEBAR --- */}
       <aside
-        className={`hidden md:flex flex-col fixed left-0 top-0 h-screen bg-white border-r border-slate-200/80 z-40 transition-all duration-200 ${
-          collapsed ? "w-24" : "w-64"
-        }`}
+        className={`hidden md:flex flex-col fixed left-0 top-0 h-screen bg-white border-r border-slate-200/80 z-40 transaction-all duration-200 ${collapsed ? "w-24" : "w-64"
+          }`}
       >
         <div className="p-6">
           <div
-            className={`flex items-center mb-8 ${
-              collapsed ? "justify-center px-0" : "gap-3 px-2 justify-between"
-            }`}
+            className={`flex items-center mb-8 ${collapsed ? "justify-center px-0" : "gap-3 px-2 justify-between"
+              }`}
           >
             <div className="flex items-center gap-3">
               <div className="bg-green-600 p-2 rounded-xl text-white shadow-md shadow-green-200 shrink-0">
@@ -52,9 +51,8 @@ export default function Navbar() {
             {/* Toggle icon */}
             <button
               onClick={() => setCollapsed((c) => !c)}
-              className={`text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-lg p-1.5 ${
-                collapsed ? "mt-3" : ""
-              }`}
+              className={`text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-lg p-1.5 ${collapsed ? "mt-3" : ""
+                }`}
               aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
               title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             >
@@ -67,13 +65,7 @@ export default function Navbar() {
           </div>
 
           <nav className="space-y-1.5">
-            <DesktopNavLink
-              href="/transition"
-              icon={<LayoutDashboard size={20} />}
-              label="Transition"
-              active={pathname === "/transition" || pathname === "/"}
-              collapsed={collapsed}
-            />
+
 
             <DesktopNavLink
               href="/create"
@@ -106,6 +98,22 @@ export default function Navbar() {
               active={pathname === "/profile"}
               collapsed={collapsed}
             />
+            <DesktopNavLink
+              href="/transaction"
+              icon={<LayoutDashboard size={20} />}
+              label="Transaction"
+              active={pathname === "/transaction" || pathname === "/"}
+              collapsed={collapsed}
+            />
+            <DesktopNavLink
+              href="/transaction-history"
+              icon={<GalleryVerticalEnd size={20} />}
+              label="Transaction-History"
+              active={pathname === "/transaction-history" || pathname === "/"}
+              collapsed={collapsed}
+            />
+
+
 
             <DesktopNavLink
               href="/print-settings"
@@ -130,9 +138,8 @@ export default function Navbar() {
           ) : (
             <button
               onClick={() => signOut({ callbackUrl: "/auth/login" })}
-              className={`flex items-center rounded-xl transition-all font-medium text-slate-500 hover:bg-red-50 hover:text-red-600 w-full text-sm ${
-                collapsed ? "justify-center p-3" : "gap-3 px-4 py-3"
-              }`}
+              className={`flex items-center rounded-xl transaction-all font-medium text-slate-500 hover:bg-red-50 hover:text-red-600 w-full text-sm ${collapsed ? "justify-center p-3" : "gap-3 px-4 py-3"
+                }`}
               title={collapsed ? "Log Out" : undefined}
             >
               <LogOut size={20} />
@@ -145,11 +152,8 @@ export default function Navbar() {
       {/* --- MOBILE BOTTOM BAR --- */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-6 py-1 z-50 shadow-lg">
         <ul className="flex justify-between items-center max-w-md mx-auto">
-          <MobileTab
-            href="/transition"
-            icon={<LayoutDashboard size={18} />}
-            active={pathname === "/transition" || pathname === "/"}
-          />
+
+
 
           <MobileTab
             href="/allproducts"
@@ -161,7 +165,7 @@ export default function Navbar() {
           <li className="-mt-6">
             <Link
               href="/create"
-              className="flex items-center justify-center bg-green-600 p-2.5 rounded-full text-white shadow-lg shadow-green-200 border-4 border-white active:scale-95 transition-transform"
+              className="flex items-center justify-center bg-green-600 p-2.5 rounded-full text-white shadow-lg shadow-green-200 border-4 border-white active:scale-95 transaction-transform"
             >
               <PlusCircle size={20} />
             </Link>
@@ -178,6 +182,21 @@ export default function Navbar() {
             icon={<UserRoundPen size={18} />}
             active={pathname === "/profile"}
           />
+          <MobileTab
+            href="/transaction"
+            icon={<LayoutDashboard size={18} />}
+            active={pathname === "/transaction" || pathname === "/"}
+          />
+
+
+          <MobileTab
+            href="/transaction-history"
+            icon={<GalleryVerticalEnd size={20} />}
+            active={pathname === "/transaction-history" || pathname === "/"}
+
+          />
+
+
         </ul>
       </nav>
     </>
@@ -203,13 +222,11 @@ function DesktopNavLink({
     <Link
       href={href}
       title={collapsed ? label : undefined}
-      className={`flex items-center rounded-xl text-sm transition-all font-semibold ${
-        collapsed ? "justify-center p-3" : "gap-3 px-4 py-3"
-      } ${
-        active
+      className={`flex items-center rounded-xl text-sm transaction-all font-semibold ${collapsed ? "justify-center p-3" : "gap-3 px-4 py-3"
+        } ${active
           ? "bg-green-50 text-green-700 shadow-sm"
           : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
-      }`}
+        }`}
     >
       {icon}
       {!collapsed && <span className="whitespace-nowrap">{label}</span>}
@@ -230,9 +247,8 @@ function MobileTab({
     <li>
       <Link
         href={href}
-        className={`flex flex-col items-center justify-center p-2 rounded-xl transition-colors relative ${
-          active ? "text-green-600" : "text-slate-400 hover:text-slate-600"
-        }`}
+        className={`flex flex-col items-center justify-center p-2 rounded-xl transaction-colors relative ${active ? "text-green-600" : "text-slate-400 hover:text-slate-600"
+          }`}
       >
         {icon}
         {active && (
