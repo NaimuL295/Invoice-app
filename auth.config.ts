@@ -20,13 +20,14 @@ export const authConfig = {
       const pathname = request.nextUrl.pathname;
       const protectedRoutes = [
         "/dashboard",
-        "/transition",
         "/create",
         "/modify",
         "/profile",
         "/print-settings",
        "/products/create",
-        "/allproducts"
+        "/allproducts",
+         "/transaction",
+        "/transaction-history"
       ];
 
       const isProtectedRoute = protectedRoutes.some((route) =>
