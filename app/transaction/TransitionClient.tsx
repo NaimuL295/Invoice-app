@@ -1,8 +1,8 @@
 "use client";
 
-import { EllipsisVertical, Share, Trash2 } from "lucide-react";
+import { EllipsisVertical, Loader2, Share, Trash2 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import toast from "react-hot-toast";
 
 import { Invoice } from "@/types/next-auth";
@@ -16,19 +16,38 @@ export default function TransitionClient({
 }) {
   const [invoices, setInvoices] = useState<Invoice[]>(initialInvoices);
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [isPending, startTransition] = useTransition();
 
-  const onDelete = async (id: number | undefined) => {
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setOpenMenuId(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleDelete = async (id: number | null) => {
     if (!id) return;
-    if (!confirm("Are you sure?")) return;
 
     const loadingToast = toast.loading("Deleting invoice...");
-    try {
-      await deleteInvoice(id);
-      setInvoices((prev) => prev.filter((inv) => inv.id !== id));
-      toast.success("Invoice deleted.", { id: loadingToast });
-    } catch {
-      toast.error("Failed to delete!", { id: loadingToast });
-    }
+    
+    startTransition(async () => {
+      try {
+        await deleteInvoice(id);
+        setInvoices((prev) => prev.filter((inv) => inv.id !== id));
+        toast.success("Invoice deleted.", { id: loadingToast });
+      } catch {
+        toast.error("Failed to delete!", { id: loadingToast });
+      } finally {
+        setDeletingId(null);
+      }
+    });
   };
 
   if (invoices.length === 0) {
@@ -56,7 +75,7 @@ export default function TransitionClient({
             key={inv.id}
             className="bg-white border border-gray-100 rounded-2xl p-4 sm:p-5 hover:shadow-md transition relative"
           >
-            {/* Top row: id/date on the left, menu button on the right — always aligned, on every breakpoint */}
+            {/* Top row */}
             <div className="flex items-start justify-between gap-2">
               <Link href={`/modify/${inv.id}`} className="flex items-center gap-2 min-w-0">
                 <span className="text-xs font-medium px-2 py-0.5 bg-gray-100 text-gray-600 rounded-md shrink-0">
@@ -69,7 +88,7 @@ export default function TransitionClient({
                 </p>
               </Link>
 
-              <div className="relative shrink-0">
+              <div className="relative shrink-0" ref={openMenuId === inv.id ? menuRef : null}>
                 <button
                   onClick={() =>
                     setOpenMenuId(openMenuId === inv.id ? null : inv.id)
@@ -81,16 +100,13 @@ export default function TransitionClient({
                 </button>
 
                 {openMenuId === inv.id && (
-                  <div
-                    onMouseLeave={() => setOpenMenuId(null)}
-                    className="absolute right-0 top-9 w-32 bg-white border shadow-xl rounded-xl text-xs z-20 overflow-hidden"
-                  >
+                  <div className="absolute right-0 top-9 w-32 bg-white border shadow-xl rounded-xl text-xs z-20 overflow-hidden">
                     <button className="w-full px-3 py-2.5 hover:bg-gray-50 flex items-center gap-2 text-gray-700 transition">
                       <Share size={13} /> Share
                     </button>
                     <button
                       onClick={() => {
-                        onDelete(inv.id);
+                        setDeletingId(inv.id ?? null);
                         setOpenMenuId(null);
                       }}
                       className="w-full px-3 py-2.5 text-red-500 hover:bg-red-50 flex items-center gap-2 border-t border-gray-50 transition font-medium"
@@ -102,7 +118,7 @@ export default function TransitionClient({
               </div>
             </div>
 
-            {/* Body: figures + actions. Stacks on mobile, sits in a row from sm up. */}
+            {/* Body */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3">
               <Link
                 href={`/modify/${inv.id}`}
@@ -138,19 +154,54 @@ export default function TransitionClient({
 
               <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t border-gray-50 sm:border-0">
                 <span
-                  className={`text-[10px] px-2.5 py-1 rounded-full font-bold tracking-wider ${due > 0
+                  className={`text-[10px] px-2.5 py-1 rounded-full font-bold tracking-wider ${
+                    due > 0
                       ? "bg-red-50 text-red-600"
                       : "bg-green-50 text-green-600"
-                    }`}
+                  }`}
                 >
                   {due > 0 ? "UNPAID" : "PAID"}
                 </span>
-                <Print invoiceId={inv.id.toString()} />
+                {inv.id && <Print invoiceId={inv.id.toString()} />}
               </div>
             </div>
           </div>
         );
       })}
+
+      {/* DELETE CONFIRMATION MODAL */}
+      {deletingId !== null && (
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-[1.618rem] max-w-sm w-full p-6 shadow-2xl border border-slate-100 text-center space-y-4 animate-in fade-in zoom-in-95 duration-150">
+            <div className="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto">
+              <Trash2 size={24} />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-slate-900">Delete Invoice?</h3>
+              <p className="text-xs text-slate-500 mt-1">
+                This action cannot be undone from your database.
+              </p>
+            </div>
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => setDeletingId(null)}
+                disabled={isPending}
+                className="flex-1 py-2.5 border border-slate-200 text-slate-600 font-semibold text-sm rounded-xl hover:bg-slate-50 disabled:opacity-50 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDelete(deletingId)}
+                disabled={isPending}
+                className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white font-semibold text-sm rounded-xl shadow-lg shadow-red-200 flex items-center justify-center gap-2 disabled:opacity-50 transition"
+              >
+                {isPending && <Loader2 size={16} className="animate-spin" />}
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

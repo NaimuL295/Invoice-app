@@ -34,7 +34,7 @@ export default async function HomePage() {
       </header>
 
       {/* Hero */}
-      <section className="mx-auto flex max-w-6xl flex-col items-center px-6 py-24 text-center">
+      <section className="mx-auto flex max-w-5xl flex-col items-center px-6 py-24 text-center">
         <h1 className="max-w-3xl text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
           Invoice Management Made Simple
         </h1>
