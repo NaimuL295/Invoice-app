@@ -1,19 +1,18 @@
 "use client";
 
-import { useState, useEffect, use, useCallback } from "react";
+import { useState, useEffect, use, useCallback, useRef, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { Package, Plus, X } from "lucide-react";
+import { Package, Plus, X, Search, Loader2 } from "lucide-react";
 
 import { useInvoiceStore } from "@/app/store/useInvoiceStore";
 import { getInvoiceId, modifyInvoice } from "@/app/actions/invoiceActions";
+import { searchProducts } from "@/app/actions/products";
+import { Product } from "@/types/next-auth";
 import InvoiceItems from "@/app/components/Invoice_Items";
 
-// ✅ API Response Type — inferred directly from getInvoiceId's return type,
-// so it can never drift out of sync with the actual server action.
 type InvoiceResponse = NonNullable<Awaited<ReturnType<typeof getInvoiceId>>>;
 
-// ✅ Form State Interface
 interface FormState {
   date: string;
   customer: string;
@@ -24,7 +23,6 @@ interface FormState {
   uid: string;
 }
 
-// ✅ Initial Form State
 const initialFormState: FormState = {
   date: "",
   customer: "",
@@ -50,6 +48,15 @@ export default function ModifyPage({ params }: { params: Promise<{ id: string }>
   const [quantity, setQuantity] = useState("");
   const [unit, setUnit] = useState("");
   const [price, setPrice] = useState("");
+  const [category, setCategory] = useState("");
+
+  // Stock search state
+  const [isPending, startTransition] = useTransition();
+  const [searchResults, setSearchResults] = useState<Product[]>([]);
+  const [search, setSearch] = useState("");
+  const [showDropdown, setShowDropdown] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
   const [units, setUnits] = useState([
     "Box",
     "Pieces (pcs)",
@@ -60,12 +67,10 @@ export default function ModifyPage({ params }: { params: Promise<{ id: string }>
   ]);
   const [newUnit, setNewUnit] = useState("");
 
-  // ✅ Helper to update form state
   const updateForm = useCallback((updates: Partial<FormState>) => {
     setFormState((prev) => ({ ...prev, ...updates }));
   }, []);
 
-  // ✅ Single useEffect - Fetch & Initialize (avoids cascading renders)
   useEffect(() => {
     let cancelled = false;
 
@@ -75,24 +80,8 @@ export default function ModifyPage({ params }: { params: Promise<{ id: string }>
 
         if (cancelled) return;
 
-        // Set invoice data
         setInvoice(data);
 
-        // ✅ Initialize form state from fetched data
-        setFormState({
-          date:
-            data.date && !isNaN(new Date(data.date).getTime())
-              ? new Date(data.date).toISOString().split("T")[0]
-              : "",
-          customer: data.customer || "",
-          discount: data.discount || 0,
-          received: data.received || 0,
-          paymentType: data.paymentType || "Cash",
-          description: data.description || "",
-          uid: data.uid || "",
-        });
-
-        // ✅ Initialize items in store
         const itemsWithTotal = (data.items || []).map((item) => ({
           id: item.id,
           item_name: item.item_name,
@@ -102,6 +91,26 @@ export default function ModifyPage({ params }: { params: Promise<{ id: string }>
           total: item.quantity * item.price,
         }));
         setItems(itemsWithTotal);
+
+        const calculatedSubtotal = itemsWithTotal.reduce((acc, item) => acc + item.total, 0);
+        // Calculate initial percentage value from stored flat discount amount
+        const initialDiscountPercent =
+          calculatedSubtotal > 0 && data.discount
+            ? Math.round(((Number(data.discount) / calculatedSubtotal) * 100) * 100) / 100
+            : 0;
+
+        setFormState({
+          date:
+            data.date && !isNaN(new Date(data.date).getTime())
+              ? new Date(data.date).toISOString().split("T")[0]
+              : "",
+          customer: data.customer || "",
+          discount: initialDiscountPercent,
+          received: data.received || 0,
+          paymentType: data.paymentType || "Cash",
+          description: data.description || "",
+          uid: data.uid || "",
+        });
       } catch (error) {
         if (cancelled) return;
         toast.error("Failed to load invoice");
@@ -116,23 +125,70 @@ export default function ModifyPage({ params }: { params: Promise<{ id: string }>
 
     fetchInvoice();
 
-    // ✅ Cleanup on unmount
     return () => {
       cancelled = true;
       clearItems();
     };
   }, [id, router, setItems, clearItems]);
 
-  // Destructure form state for easier access
+  // Debounced product search
+  useEffect(() => {
+    if (!showAddModal) return;
+
+    const timer = setTimeout(() => {
+      startTransition(async () => {
+        try {
+          const results = await searchProducts(search);
+          setSearchResults(results);
+        } catch (error) {
+          console.error("Failed to search products:", error);
+          toast.error("Failed to fetch products");
+        }
+      });
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [search, showAddModal]);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const onSelectStock = (item: Product) => {
+    setItemName(item.item_name);
+    setUnit(item.unit || "");
+    setPrice(String(item.price));
+    setCategory(item.category || "");
+    setSearch(item.item_name);
+    setShowDropdown(false);
+  };
+
+  const clearSelection = () => {
+    setItemName("");
+    setUnit("");
+    setPrice("");
+    setCategory("");
+    setSearch("");
+    setSearchResults([]);
+  };
+
   const { date, customer, discount, received, paymentType, description, uid } = formState;
 
-  // Calculations
+  // Percentage-only calculations
   const subtotal = items.reduce((acc, item) => acc + item.quantity * item.price, 0);
-  const total = subtotal - Number(discount || 0);
+  const discountAmount = (subtotal * Number(discount || 0)) / 100;
+  const cappedDiscount = Math.min(discountAmount, subtotal);
+  const total = subtotal - cappedDiscount;
   const balance = total - Number(received || 0);
   const itemTotal = (Number(quantity) || 0) * (Number(price) || 0);
 
-  // Handle Add Item Submit
   const onAddItemSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!itemName || !quantity || !unit || !price) {
@@ -150,14 +206,11 @@ export default function ModifyPage({ params }: { params: Promise<{ id: string }>
     });
 
     toast.success("Item added successfully!");
-    setItemName("");
+    clearSelection();
     setQuantity("");
-    setUnit("");
-    setPrice("");
     setShowAddModal(false);
   };
 
-  // Handle Add Unit
   const onAddUnit = () => {
     if (newUnit.trim() && !units.includes(newUnit)) {
       setUnits((prev) => [...prev, newUnit]);
@@ -167,7 +220,6 @@ export default function ModifyPage({ params }: { params: Promise<{ id: string }>
     }
   };
 
-  // Handle Invoice Submit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!invoice) return;
@@ -183,7 +235,7 @@ export default function ModifyPage({ params }: { params: Promise<{ id: string }>
       customer,
       items,
       subtotal,
-      discount: Number(discount || 0),
+      discount: cappedDiscount, // Flat calculated amount sent to server
       total,
       received: Number(received || 0),
       due: balance,
@@ -207,7 +259,6 @@ export default function ModifyPage({ params }: { params: Promise<{ id: string }>
     }
   };
 
-  // Loading State
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -314,10 +365,10 @@ export default function ModifyPage({ params }: { params: Promise<{ id: string }>
                   ৳{subtotal.toLocaleString()}
                 </span>
               </div>
+              
               <div className="flex justify-between items-center">
-                <span className="text-gray-600">Discount</span>
+                <span className="text-gray-600">Discount (%)</span>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-400">৳</span>
                   <input
                     type="number"
                     value={discount}
@@ -326,10 +377,21 @@ export default function ModifyPage({ params }: { params: Promise<{ id: string }>
                         discount: e.target.value === "" ? "" : Number(e.target.value),
                       })
                     }
-                    className="w-20 border-b border-gray-300 bg-transparent text-right outline-none focus:border-black"
+                    min="0"
+                    max="100"
+                    className="w-20 border-b border-gray-300 bg-transparent text-right outline-none focus:border-black font-medium"
+                    placeholder="0"
                   />
                 </div>
               </div>
+
+              {/* Discount Amount Preview */}
+              {cappedDiscount > 0 && (
+                <div className="flex justify-between text-xs text-gray-400 px-1">
+                  <span>Discount Applied</span>
+                  <span>- ৳{cappedDiscount.toLocaleString()}</span>
+                </div>
+              )}
             </div>
 
             <div className="space-y-4">
@@ -342,10 +404,11 @@ export default function ModifyPage({ params }: { params: Promise<{ id: string }>
 
               <label className="flex justify-between items-center bg-white p-3 rounded-lg shadow-sm border border-gray-100 cursor-pointer">
                 <div
-                  className={`w-6 h-6 rounded-full border-2 flex-shrink-0 transition-all ${Number(received) > 0
+                  className={`w-6 h-6 rounded-full border-2 flex-shrink-0 transition-all ${
+                    Number(received) > 0
                       ? "bg-yellow-400 border-yellow-500"
                       : "border-gray-300"
-                    }`}
+                  }`}
                 ></div>
                 <span className="font-medium">Received Amount</span>
                 <input
@@ -363,8 +426,9 @@ export default function ModifyPage({ params }: { params: Promise<{ id: string }>
               <div className="flex justify-between px-3">
                 <span className="font-medium text-gray-600">Balance Due</span>
                 <span
-                  className={`font-bold ${balance > 0 ? "text-red-500" : "text-gray-500"
-                    }`}
+                  className={`font-bold ${
+                    balance > 0 ? "text-red-500" : "text-gray-500"
+                  }`}
                 >
                   ৳{balance.toLocaleString()}
                 </span>
@@ -379,10 +443,11 @@ export default function ModifyPage({ params }: { params: Promise<{ id: string }>
                 {["Cash", "Bkash", "Nagad", "Card", "Bank"].map((method) => (
                   <label
                     key={method}
-                    className={`cursor-pointer px-4 py-2 rounded-full border transition-all ${paymentType === method
+                    className={`cursor-pointer px-4 py-2 rounded-full border transition-all ${
+                      paymentType === method
                         ? "bg-yellow-400 text-white border-yellow-500"
                         : "border-gray-300 text-gray-700"
-                      }`}
+                    }`}
                   >
                     <input
                       type="radio"
@@ -454,6 +519,68 @@ export default function ModifyPage({ params }: { params: Promise<{ id: string }>
 
             {/* Modal Body */}
             <form onSubmit={onAddItemSubmit} className="p-5 space-y-4">
+              {/* Search Stock */}
+              <div className="space-y-1.5 relative" ref={wrapperRef}>
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">
+                  Search Stock
+                </label>
+                <div className="relative">
+                  <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Type product name or category..."
+                    value={search}
+                    onChange={(e) => {
+                      setSearch(e.target.value);
+                      setShowDropdown(true);
+                    }}
+                    onFocus={() => setShowDropdown(true)}
+                    className="w-full pl-10 pr-9 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:bg-white outline-none transition-all"
+                  />
+                  {search && (
+                    <button
+                      type="button"
+                      onClick={clearSelection}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    >
+                      <X size={16} />
+                    </button>
+                  )}
+                </div>
+
+                {showDropdown && (
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                    {isPending ? (
+                      <div className="px-4 py-4 text-sm text-slate-400 flex items-center justify-center gap-2">
+                        <Loader2 size={16} className="animate-spin text-green-500" />
+                        <span>Searching database...</span>
+                      </div>
+                    ) : searchResults.length > 0 ? (
+                      searchResults.map((s) => (
+                        <button
+                          type="button"
+                          key={s.id}
+                          onClick={() => onSelectStock(s)}
+                          className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex justify-between items-center border-b border-slate-100 last:border-0"
+                        >
+                          <div>
+                            <p className="text-sm font-medium text-slate-800">{s.item_name}</p>
+                            {s.category && (
+                              <p className="text-[11px] text-slate-400">{s.category}</p>
+                            )}
+                          </div>
+                          <span className="text-sm font-semibold">৳{s.price}</span>
+                        </button>
+                      ))
+                    ) : (
+                      <div className="px-4 py-3 text-sm text-slate-400">
+                        No matching products — will be added as a custom item
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">
                   Item Description

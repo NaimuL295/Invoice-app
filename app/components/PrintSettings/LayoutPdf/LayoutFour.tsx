@@ -45,7 +45,7 @@ const styles = StyleSheet.create({
   },
   metaRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifySpaceBetween: "space-between",
     marginBottom: 2,
   },
   metaLabel: {
@@ -71,6 +71,7 @@ const styles = StyleSheet.create({
   colDescription: {
     flex: 2.2,
     paddingRight: 2,
+    flexWrap: "wrap",
   },
   colQty: { 
     flex: 0.5, 
@@ -139,12 +140,17 @@ export default function LayoutFour({ title, data }: LayoutProps) {
       : "00-00-0000",
     items: data?.items || [],
     received: Number(data?.received) || 0,
-    discount: Number(data?.discount) || 0,
+    discountAmount: Number(data?.discount) || 0, // Flat discount amount in Tk
     subtotal: Number(data?.subtotal) || 0,
     total: Number(data?.total) || 0,
   };
 
   const due = invoiceData.total - invoiceData.received;
+
+  // Derive discount percentage accurately from the subtotal and discount amount
+  const calculatedDiscountPercent = invoiceData.subtotal > 0
+    ? Math.round((invoiceData.discountAmount / invoiceData.subtotal) * 100)
+    : 0;
 
   // Safe toWords evaluation with explicit BDT fallback styling
   let wordsRepresentation = "";
@@ -218,12 +224,12 @@ export default function LayoutFour({ title, data }: LayoutProps) {
             <Text>{invoiceData.subtotal.toFixed(2)}</Text>
           </View>
 
-          {invoiceData.discount > 0 && (
+          {invoiceData.discountAmount > 0 && (
             <View style={styles.summaryRow}>
-              <Text>Discount ({invoiceData.discount}%):</Text>
               <Text>
-                -{((invoiceData.subtotal * invoiceData.discount) / 100).toFixed(2)}
+                Discount{calculatedDiscountPercent > 0 ? ` (${calculatedDiscountPercent}%)` : ""}:
               </Text>
+              <Text>-{invoiceData.discountAmount.toFixed(2)}</Text>
             </View>
           )}
 

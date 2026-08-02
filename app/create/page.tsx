@@ -103,7 +103,7 @@ export default function CreatePage() {
   );
 
   return (
-<div className="max-w-5xl lg:mx-auto p-2 sm:p-20 pb-24 md:pb-20">
+    <div className="max-w-5xl lg:mx-auto p-2 sm:p-20 pb-24 md:pb-20">
       <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-2 gap-10">
         {/* LEFT COLUMN */}
         <div className="space-y-4">
@@ -178,48 +178,18 @@ export default function CreatePage() {
           <div className="space-y-3 border-b border-gray-200 pb-4">
             <div className="flex justify-between items-center text-gray-600">
               <span>Discount</span>
-              <div className="flex items-center gap-1.5">
-                {/* Percentage/Flat toggle */}
-                <div className="flex bg-slate-100 rounded-lg p-0.5">
-                  <button
-                    type="button"
-                    onClick={() => setDiscountType("percentage")}
-                    className={`px-2 py-1 text-xs font-bold rounded-md transition-all ${
-                      discountType === "percentage"
-                        ? "bg-black text-white"
-                        : "text-gray-500"
-                    }`}
-                  >
-                    %
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setDiscountType("flat")}
-                    className={`px-2 py-1 text-xs font-bold rounded-md transition-all ${
-                      discountType === "flat"
-                        ? "bg-black text-white"
-                        : "text-gray-500"
-                    }`}
-                  >
-                    ৳
-                  </button>
-                </div>
-
-                <div className="flex items-center gap-2 bg-white px-3 py-1 rounded-lg border border-gray-200">
-                  <span className="text-xs text-gray-400 font-bold">
-                    {discountType === "percentage" ? "%" : "৳"}
-                  </span>
-                  <input
-                    type="number"
-                    value={discount}
-                    onChange={(e) =>
-                      setDiscount(e.target.value === "" ? "" : Number(e.target.value))
-                    }
-                    min="0"
-                    max={discountType === "percentage" ? 100 : undefined}
-                    className="w-20 text-right outline-none font-medium"
-                  />
-                </div>
+              <div className="flex items-center gap-2 bg-white px-3 py-1 rounded-lg border border-gray-200">
+                <input
+                  type="number"
+                  value={discount}
+                  onChange={(e) =>
+                    setDiscount(e.target.value === "" ? "" : Number(e.target.value))
+                  }
+                  min="0"
+                  max={discountType === "percentage" ? 100 : undefined}
+                  className="w-20 text-right outline-none font-medium"
+                  placeholder="0"
+                />
               </div>
             </div>
 
@@ -253,7 +223,7 @@ export default function CreatePage() {
                   onChange={(e) =>
                     setReceived(e.target.value === "" ? "" : Number(e.target.value))
                   }
-                  className="w-full text-2xl font-bold  outline-none"
+                  className="w-full text-2xl font-bold outline-none"
                 />
               </div>
             </div>
@@ -272,10 +242,11 @@ export default function CreatePage() {
               {["Cash", "Bkash", "Card", "Bank"].map((method) => (
                 <label
                   key={method}
-                  className={`cursor-pointer px-4 py-2 rounded-xl border-2 text-sm font-bold transition-all ${paymentType === method
+                  className={`cursor-pointer px-4 py-2 rounded-xl border-2 text-sm font-bold transition-all ${
+                    paymentType === method
                       ? "bg-black text-white border-black"
                       : "bg-white border-gray-200 text-gray-500 hover:border-gray-300"
-                    }`}
+                  }`}
                 >
                   <input
                     type="radio"

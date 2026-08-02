@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
   }
 });
 
-export default function LayoutTwo({ title, data }: LayoutProps) {
+export default function LayoutOne({ title, data }: LayoutProps) {
   const invoiceData = {
     user_name: data?.user_name || "Company Name",
     companyEmail: data?.email || "email@example.com",
@@ -124,22 +124,26 @@ export default function LayoutTwo({ title, data }: LayoutProps) {
       : "00-00-0000",
     items: data?.items || [],
     received: Number(data?.received) || 0,
-    discount: Number(data?.discount) || 0,
-    subtotal: Number(data?.subtotal || data?.total) || 0,
+    discountAmount: Number(data?.discount) || 0, // Flat discount amount
+    subtotal: Number(data?.subtotal) || 0,
     user: data?.user || null,
     total: Number(data?.total) || 0,
   };
 
+  // Dynamically calculate effective percentage for display
+  const calculatedDiscountPercent = invoiceData.subtotal > 0
+    ? Math.round((invoiceData.discountAmount / invoiceData.subtotal) * 100)
+    : 0;
+
   // Safe handler to prevent toWords errors on initial mount / empty state
   const getAmountInWords = () => {
     try {
-      return toWords(invoiceData.total || 0);
+      return `${toWords(invoiceData.total || 0)} Taka Only`;
     } catch {
-      return "Zero";
+      return "Zero Taka";
     }
   };
 
-  const discountAmount = (invoiceData.subtotal * invoiceData.discount) / 100;
   const balanceDue = invoiceData.total - invoiceData.received;
 
   return (
@@ -149,7 +153,6 @@ export default function LayoutTwo({ title, data }: LayoutProps) {
         {/* Header Section */}
         <View style={styles.headerSection}>
           <View>
-            {/* 🟩 সঠিকভাবে Image Component ব্যবহার এবং Optional Chaining যোগ করা হয়েছে */}
             {invoiceData.user?.image ? (
               // eslint-disable-next-line jsx-a11y/alt-text
               <Image src={invoiceData.user.image} style={styles.logoImage} />
@@ -165,7 +168,7 @@ export default function LayoutTwo({ title, data }: LayoutProps) {
           </View>
         </View>
 
-        <Text style={styles.invoiceTitle}>{title || "Invoice"}</Text>
+        <Text style={styles.invoiceTitle}>{title || "Commercial Invoice"}</Text>
 
         {/* Info Blocks */}
         <View style={styles.infoBar}>
@@ -239,8 +242,10 @@ export default function LayoutTwo({ title, data }: LayoutProps) {
               <Text>{invoiceData.subtotal.toFixed(2)}</Text>
             </View>
             <View style={styles.summaryRow}>
-              <Text>Discount ({invoiceData.discount}%)</Text>
-              <Text>{discountAmount.toFixed(2)}</Text>
+              <Text>
+                Discount{calculatedDiscountPercent > 0 ? ` (${calculatedDiscountPercent}%)` : ""}
+              </Text>
+              <Text>-{invoiceData.discountAmount.toFixed(2)}</Text>
             </View>
             <View style={[styles.summaryRow, { fontWeight: 'bold' }]}>
               <Text>Total</Text>
@@ -250,10 +255,7 @@ export default function LayoutTwo({ title, data }: LayoutProps) {
               <Text>Received</Text>
               <Text>{invoiceData.received.toFixed(2)}</Text>
             </View>
-            <View style={styles.summaryRow}>
-              <Text style={{ fontWeight: 'bold' }}>Balance</Text>
-              <Text style={{ fontWeight: 'bold' }}>{balanceDue.toFixed(2)}</Text>
-            </View>
+          
           </View>
         </View>
 

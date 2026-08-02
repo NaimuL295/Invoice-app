@@ -130,7 +130,7 @@ const styles = StyleSheet.create({
     padding: 10,
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: "auto", // Push to bottom if needed
+    marginTop: "auto",
   },
 });
 
@@ -146,21 +146,23 @@ export default function LayoutThree({ title, data }: LayoutProps) {
       : "00-00-0000",
     items: data?.items || [],
     received: Number(data?.received) || 0,
-    discountPercent: Number(data?.discount) || 0,
-    subtotal: Number(data?.subtotal || data?.total) || 0,
+    discountAmount: Number(data?.discount) || 0, // Flat monetary discount
+    subtotal: Number(data?.subtotal) || 0,
     total: Number(data?.total) || 0,
     due: Number(data?.due) || 0,
   };
 
-  // 🟩 Dynamic discount money calculation
-  const discountAmount = (invoiceData.subtotal * invoiceData.discountPercent) / 100;
+  // 🟩 Calculates effective discount percentage dynamically
+  const calculatedDiscountPercent = invoiceData.subtotal > 0
+    ? Math.round((invoiceData.discountAmount / invoiceData.subtotal) * 100)
+    : 0;
 
   // Safe fallback wrapper for toWords conversion
   const renderAmountInWords = () => {
     try {
-      return toWords(invoiceData.total || 0);
+      return `${toWords(invoiceData.total || 0)} Taka Only`;
     } catch {
-      return "Zero";
+      return "Zero Taka";
     }
   };
 
@@ -173,7 +175,6 @@ export default function LayoutThree({ title, data }: LayoutProps) {
           {/* Company Info Header */}
           <View style={styles.companySection}>
             <View style={styles.logoBox}>
-              {/* 🟩 Properly renders logo using <Image /> or fallback text */}
               {invoiceData.userLogo ? (
                 // eslint-disable-next-line jsx-a11y/alt-text
                 <Image src={invoiceData.userLogo} style={styles.logoImage} />
@@ -252,8 +253,10 @@ export default function LayoutThree({ title, data }: LayoutProps) {
                 <Text>{invoiceData.subtotal.toFixed(2)}</Text>
               </View>
               <View style={styles.summaryRow}>
-                <Text>Discount ({invoiceData.discountPercent}%):</Text>
-                <Text>{discountAmount.toFixed(2)}</Text>
+                <Text>
+                  Discount{calculatedDiscountPercent > 0 ? ` (${calculatedDiscountPercent}%)` : ""}:
+                </Text>
+                <Text>-{invoiceData.discountAmount.toFixed(2)}</Text>
               </View>
               <View style={[styles.summaryRow, styles.totalRow]}>
                 <Text>Total:</Text>
