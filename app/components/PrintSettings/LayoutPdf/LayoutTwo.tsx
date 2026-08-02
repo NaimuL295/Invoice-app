@@ -30,11 +30,6 @@ const styles = StyleSheet.create({
     height: 40,
     objectFit: "contain",
   },
-  logoFallback: {
-    color: "white",
-    fontWeight: "bold",
-    fontSize: 12,
-  },
   companyName: {
     fontSize: 14,
     fontWeight: "bold",
@@ -129,22 +124,26 @@ export default function LayoutTwo({ title, data }: LayoutProps) {
       : "00-00-0000",
     items: data?.items || [],
     received: Number(data?.received) || 0,
-    discount: Number(data?.discount) || 0,
-    subtotal: Number(data?.subtotal || data?.total) || 0,
+    discountAmount: Number(data?.discount) || 0, // Flat monetary discount amount
+    subtotal: Number(data?.subtotal) || 0,
     user: data?.user || null,
     total: Number(data?.total) || 0,
   };
 
+  // Derive actual discount percentage accurately
+  const calculatedDiscountPercent = invoiceData.subtotal > 0
+    ? Math.round((invoiceData.discountAmount / invoiceData.subtotal) * 100)
+    : 0;
+
   // Safe handler to prevent toWords errors on initial mount / empty state
   const getAmountInWords = () => {
     try {
-      return toWords(invoiceData.total || 0);
+      return `${toWords(invoiceData.total || 0)} Taka Only`;
     } catch {
-      return "Zero";
+      return "Zero Taka";
     }
   };
 
-  const discountAmount = (invoiceData.subtotal * invoiceData.discount) / 100;
   const balanceDue = invoiceData.total - invoiceData.received;
 
   return (
@@ -154,17 +153,16 @@ export default function LayoutTwo({ title, data }: LayoutProps) {
         {/* Header Section */}
         <View style={styles.headerSection}>
           <View>
-            {/* 🟩 ডায়নামিক লোগো সাপোর্ট যোগ করা হয়েছে */}
             {invoiceData.user?.image ? (
               // eslint-disable-next-line jsx-a11y/alt-text
               <Image src={invoiceData.user.image} style={styles.logoImage} />
             ) : (
-              <Text style={styles.logoFallback}>Logo</Text>
+              <Text style={{ color: "white", fontWeight: "bold" }}>Logo</Text>
             )}
           </View>
           <View>
             <Text style={styles.companyName}>
-              {invoiceData.user?.user_name || invoiceData.user?.email || invoiceData.user_name}
+              {invoiceData.user?.email || invoiceData.user_name}
             </Text>
             <Text style={{ textAlign: 'right', fontSize: 8 }}>Email: {invoiceData.companyEmail}</Text>
           </View>
@@ -244,8 +242,10 @@ export default function LayoutTwo({ title, data }: LayoutProps) {
               <Text>{invoiceData.subtotal.toFixed(2)}</Text>
             </View>
             <View style={styles.summaryRow}>
-              <Text>Discount ({invoiceData.discount}%)</Text>
-              <Text>{discountAmount.toFixed(2)}</Text>
+              <Text>
+                Discount{calculatedDiscountPercent > 0 ? ` (${calculatedDiscountPercent}%)` : ""}
+              </Text>
+              <Text>-{invoiceData.discountAmount.toFixed(2)}</Text>
             </View>
             <View style={[styles.summaryRow, { fontWeight: 'bold' }]}>
               <Text>Total</Text>
@@ -255,17 +255,14 @@ export default function LayoutTwo({ title, data }: LayoutProps) {
               <Text>Received</Text>
               <Text>{invoiceData.received.toFixed(2)}</Text>
             </View>
-            <View style={styles.summaryRow}>
-              <Text style={{ fontWeight: 'bold' }}>Balance</Text>
-              <Text style={{ fontWeight: 'bold' }}>{balanceDue.toFixed(2)}</Text>
-            </View>
+         
           </View>
         </View>
 
         {/* Footer Area */}
         <View style={{ marginTop: 40, alignItems: 'flex-end' }}>
           <View style={{ borderTopWidth: 1, borderTopColor: '#000', width: 150, paddingTop: 5 }}>
-            <Text style={{ textAlign: 'center', fontSize: 9 }}>Authorized Signatory</Text>
+            <Text style={{ textAlign: 'center', fontSize: 9 }}>Authorized Signatory </Text>
           </View>
         </View>
 
