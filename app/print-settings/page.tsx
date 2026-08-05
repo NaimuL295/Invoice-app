@@ -83,11 +83,11 @@ export default function PrintSettings() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-4 sm:p-6">
-      <div className="rounded-2xl   p-6">
+    <div className="min-h-screen  max-w-5xl mx-auto p-4 sm:p-4">
+      <div className="rounded-2xl   p-10">
         
         {/* Header */}
-        <div className="flex items-center gap-4 mb-6 pb-6  ">
+        <div className="flex items-center gap-4 mb-4 pb-4  ">
           <div className="h-12 w-12 rounded-xl b flex items-center justify-center shrink-0">
             <LayoutTemplate size={26} />
           </div>
@@ -146,7 +146,7 @@ export default function PrintSettings() {
           </div>
 
           {/* Footer */}
-          <div className="mt-8 flex items-center justify-between border-t  pt-6">
+          <div className="mt-8 flex items-center justify-between border-t  pt-3">
             <div>
               <p className="text-xs  uppercase tracking-wider font-medium">
                 Selected Layout

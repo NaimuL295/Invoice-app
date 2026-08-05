@@ -10,8 +10,6 @@ import { useInvoiceStore } from "../store/useInvoiceStore";
 import InvoiceItems from "../Share/InvoiceItems";
 import { createInvoice } from "../actions/invoiceActions";
 
-type DiscountType = "percentage" | "flat";
-
 export default function CreatePage() {
   const { data: session } = useSession();
   const router = useRouter();
@@ -19,33 +17,33 @@ export default function CreatePage() {
   const items = useInvoiceStore((state) => state.items);
   const setItems = useInvoiceStore((state) => state.setItems);
 
-  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+  const [date, setDate] = useState(() => new Date().toISOString().split("T")[0]);
   const [customer, setCustomer] = useState("");
+  const [customerNumber, setCustomerNumber] = useState("");
+  const [customerAddress, setCustomerAddress] = useState("");
   const [invoiceId, setInvoiceId] = useState(() =>
-    String(crypto.randomUUID().split("-")[0])
+    String(crypto.getRandomValues(new Uint32Array(1))[0])
   );
   const [discount, setDiscount] = useState<number | "">("");
-  const [discountType, setDiscountType] = useState<DiscountType>("percentage");
+
   const [received, setReceived] = useState<number | "">("");
   const [paymentType, setPaymentType] = useState("Cash");
   const [description, setDescription] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Calculations
   const { subtotal, discountAmount, total, balance } = useMemo(() => {
     const subtotal = items.reduce((acc, item) => acc + item.quantity * item.price, 0);
 
-    const discountAmount =
-      discountType === "percentage"
-        ? (subtotal * Number(discount || 0)) / 100
-        : Number(discount || 0);
+    const discountValue = Number(discount || 0);
+    const calculatedDiscount = (subtotal * discountValue) / 100;
 
-    // discount amount subtotal-এর বেশি হলে ক্যাপ করা
-    const cappedDiscount = Math.min(discountAmount, subtotal);
+    const cappedDiscount = Math.min(calculatedDiscount, subtotal);
     const total = subtotal - cappedDiscount;
     const balance = total - Number(received || 0);
 
     return { subtotal, discountAmount: cappedDiscount, total, balance };
-  }, [items, discount, discountType, received]);
+  }, [items, discount, received]);
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent): Promise<void> => {
@@ -53,13 +51,24 @@ export default function CreatePage() {
 
       if (isSubmitting) return;
 
-      if (!customer || items.length === 0) {
-        toast.error("Customer and items required!");
+      if (!customer.trim()) {
+        toast.error("Customer name is required!");
         return;
       }
-
+      if (!customerNumber.trim()) {
+        toast.error("Customer phone number is required!");
+        return;
+      }
+      if (!customerAddress.trim()) {
+        toast.error("Customer address is required!");
+        return;
+      }
+      if (items.length === 0) {
+        toast.error("Please add at least one item to the invoice!");
+        return;
+      }
       if (!session?.user) {
-        toast.error("Please log in again.");
+        toast.error("Please log in to create an invoice.");
         return;
       }
 
@@ -67,12 +76,13 @@ export default function CreatePage() {
         uid: String(invoiceId),
         date,
         customer,
+        customer_number: customerNumber,
+        customer_address: customerAddress,
         items,
         subtotal,
-        discount: discountAmount, // সবসময় calculated flat amount পাঠানো হচ্ছে
-        discountType,
+        discount: discountAmount,
         total,
-        received,
+        received: Number(received || 0),
         due: balance,
         description,
         paymentType,
@@ -84,26 +94,42 @@ export default function CreatePage() {
       try {
         await createInvoice(invoiceData);
 
+        // Reset global & local state
         setItems([]);
         toast.success("Invoice created successfully! 🎉", { id: loadingToast });
-
         router.push("/");
-        setCustomer("");
-        setDiscount("");
-        setReceived("");
       } catch (error) {
         console.error("Error creating invoice:", error);
-        const message = error instanceof Error ? error.message : "Something went wrong!";
+        const message =
+          error instanceof Error ? error.message : "Something went wrong!";
         toast.error(message, { id: loadingToast });
       } finally {
         setIsSubmitting(false);
       }
     },
-    [isSubmitting, customer, items, session, invoiceId, date, subtotal, discountAmount, discountType, total, received, description, paymentType, setItems, router]
+    [
+      isSubmitting,
+      customer,
+      customerNumber,
+      customerAddress,
+      items,
+      session?.user,
+      invoiceId,
+      date,
+      subtotal,
+      discountAmount,
+      total,
+      received,
+      balance,
+      description,
+      paymentType,
+      setItems,
+      router,
+    ]
   );
 
   return (
-    <div className="max-w-5xl lg:mx-auto p-2 sm:p-20 pb-24 md:pb-20">
+    <div className="min-h-screen max-w-5xl lg:mx-auto p-2 sm:p-6 pb-16 md:pb-4">
       <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-2 gap-10">
         {/* LEFT COLUMN */}
         <div className="space-y-4">
@@ -132,6 +158,7 @@ export default function CreatePage() {
             </div>
           </section>
 
+          {/* Customer Name */}
           <div className="relative group">
             <input
               id="name"
@@ -152,6 +179,36 @@ export default function CreatePage() {
             </label>
           </div>
 
+          {/* Customer Phone */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-slate-400">
+              Customer Phone Number
+            </label>
+            <input
+              type="tel"
+              placeholder="e.g. 01712345678"
+              value={customerNumber}
+              onChange={(e) => setCustomerNumber(e.target.value)}
+              required
+              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:bg-white focus:border-transparent outline-none transition-all text-sm"
+            />
+          </div>
+
+          {/* Customer Address */}
+          <div className="space-y-2">
+            <label className="block font-bold text-sm text-gray-600">
+              Customer Address
+            </label>
+            <textarea
+              rows={2}
+              value={customerAddress}
+              onChange={(e) => setCustomerAddress(e.target.value)}
+              className="w-full p-3 border-2 border-gray-100 rounded-xl bg-white outline-none focus:border-black text-sm transition-all"
+              placeholder="Click to add address..."
+            />
+          </div>
+
+          {/* Products List */}
           <div className="space-y-4">
             <div className="flex justify-between items-center border-b border-gray-100 pb-2">
               <h3 className="font-bold text-gray-800 text-lg">Product Items</h3>
@@ -176,24 +233,36 @@ export default function CreatePage() {
           <h3 className="font-bold text-xl text-gray-900 mb-4">Summary</h3>
 
           <div className="space-y-3 border-b border-gray-200 pb-4">
+            {/* Subtotal Display */}
+            <div className="flex justify-between items-center text-sm text-gray-600">
+              <span>Subtotal</span>
+              <span className="font-semibold text-gray-800">
+                ৳{subtotal.toLocaleString()}
+              </span>
+            </div>
+
+            {/* Discount Section */}
             <div className="flex justify-between items-center text-gray-600">
-              <span>Discount</span>
+              <span>Discount (%)</span>
+
               <div className="flex items-center gap-2 bg-white px-3 py-1 rounded-lg border border-gray-200">
                 <input
                   type="number"
                   value={discount}
                   onChange={(e) =>
-                    setDiscount(e.target.value === "" ? "" : Number(e.target.value))
+                    setDiscount(
+                      e.target.value === "" ? "" : Math.max(0, Number(e.target.value))
+                    )
                   }
                   min="0"
-                  max={discountType === "percentage" ? 100 : undefined}
-                  className="w-20 text-right outline-none font-medium"
+                  max="100"
+                  className="w-20 text-right outline-none font-medium text-sm"
                   placeholder="0"
                 />
               </div>
             </div>
 
-            {/* Discount amount preview */}
+            {/* Discount Amount Preview */}
             {discountAmount > 0 && (
               <div className="flex justify-between text-xs text-gray-400 px-1">
                 <span>Discount Applied</span>
@@ -202,40 +271,49 @@ export default function CreatePage() {
             )}
 
             <div className="flex justify-between items-center pt-2">
-              <span className="text-xl font-black text-gray-900">Total Amount</span>
-              <span className="text-2xl font-black text-red-500">
+              <span className="text-ls font-black text-gray-900">Total Amount</span>
+              <span className="text-ls font-black text-red-500">
                 ৳{total.toLocaleString()}
               </span>
             </div>
           </div>
 
+          {/* Payment Received */}
           <div className="space-y-3 pt-2">
             <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
               <div className="flex justify-between items-center mb-1">
-                <span className="text-sm font-bold text-gray-500 uppercase">Received</span>
+                <span className="text-sm font-bold text-gray-500 ">Received</span>
                 <span className="text-xs text-green-500 font-bold">Paid</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xl font-bold text-gray-400">৳</span>
+                <span className="text-ls font-bold text-gray-400">৳</span>
                 <input
                   type="number"
                   value={received}
                   onChange={(e) =>
-                    setReceived(e.target.value === "" ? "" : Number(e.target.value))
+                    setReceived(
+                      e.target.value === "" ? "" : Math.max(0, Number(e.target.value))
+                    )
                   }
-                  className="w-full text-2xl font-bold outline-none"
+                  className="w-full text-ls font-bold outline-none"
+                  placeholder="0"
                 />
               </div>
             </div>
 
             <div className="flex justify-between px-2">
               <span className="font-semibold text-gray-500">Balance Due</span>
-              <span className={`font-bold text-lg ${balance > 0 ? "text-red-500" : "text-gray-400"}`}>
+              <span
+                className={`font-bold text-ls ${
+                  balance > 0 ? "text-red-500" : "text-gray-400"
+                }`}
+              >
                 ৳{balance.toLocaleString()}
               </span>
             </div>
           </div>
 
+          {/* Payment Method Selection */}
           <div className="space-y-3">
             <label className="block font-bold text-sm text-gray-600">Payment Method</label>
             <div className="flex gap-2 flex-wrap">
@@ -262,6 +340,7 @@ export default function CreatePage() {
             </div>
           </div>
 
+          {/* Notes */}
           <div className="space-y-2">
             <label className="block font-bold text-sm text-gray-600">Note / Description</label>
             <textarea
@@ -273,6 +352,7 @@ export default function CreatePage() {
             />
           </div>
 
+          {/* Action Buttons */}
           <div className="flex gap-3 pt-4">
             <button
               type="submit"
@@ -283,7 +363,9 @@ export default function CreatePage() {
             </button>
             <button
               type="button"
+              onClick={() => window.print()}
               className="p-4 bg-white border-2 border-gray-200 text-gray-600 rounded-2xl hover:bg-gray-50 transition-all"
+              title="Print Invoice"
             >
               <Printer size={24} />
             </button>

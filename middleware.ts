@@ -18,6 +18,6 @@ export const config = {
   "/allproducts/:path*",
    "/transaction/:path*",
     "/transaction-history/:path*",
-    "/((?!api/auth|_next/static|_next/image|favicon.ico).*)",
+   "/((?!api/auth|_next/static|_next/image|favicon.ico).*)",
   ],
 };

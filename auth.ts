@@ -14,30 +14,32 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: {
     ...baseAdapter,
 
- createUser: async (data: AdapterUser) => {
-  const { name, id, ...rest } = data;
+    // OAuth / NextAuth ইউজার ক্রিয়েট করার সময় Custom Field Mapping
+    createUser: async (data: AdapterUser) => {
+      const { name, id, ...rest } = data;
 
-  const user = await prisma.user.create({
-    data: {
-      ...rest,
-      user_name: name,
+      const user = await prisma.user.create({
+        data: {
+          ...rest,
+          user_name: name || data.email.split("@")[0], // Name না থাকলে ইমেইলের অংশ ব্যবহার করবে
+        },
+      });
+
+      return {
+        id: String(user.id),
+        name: user.user_name,
+        email: user.email,
+        emailVerified: user.emailVerified,
+        image: user.image,
+      } as AdapterUser;
     },
-  });
 
-  return {
-    id: String(user.id),
-    name: user.user_name,
-    email: user.email,
-    emailVerified: user.emailVerified,
-    image: user.image,
-  } as AdapterUser;
-},
-
+    // User ID Int হলে Link Account সুরক্ষিত করা
     linkAccount: async (data: AdapterAccount) => {
       await prisma.account.create({
         data: {
           ...data,
-          userId: Number(data.userId),
+          userId: typeof data.userId === "string" ? Number(data.userId) : data.userId,
         },
       });
       return data;
@@ -59,7 +61,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         const valid = await bcrypt.compare(
           creds.password as string,
-          user.password,
+          user.password
         );
         if (!valid) return null;
 
@@ -72,21 +74,22 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       },
     }),
   ],
-  callbacks: {
-    ...authConfig.callbacks,
-    async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id;
-        token.user_name = (user as User).user_name;
-      }
-      return token;
-    },
-    async session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.id as string;
-        (session.user as User).user_name = token.user_name;
-      }
-      return session;
-    },
+// auth.ts এর callbacks অংশ
+callbacks: {
+  ...authConfig.callbacks,
+  async jwt({ token, user }) {
+    if (user) {
+      token.id = user.id;
+      token.user_name = user.user_name; // কোনো type error ছাড়াই কাজ করবে
+    }
+    return token;
   },
+  async session({ session, token }) {
+    if (session.user) {
+      session.user.id = token.id as string;
+      session.user.user_name = token.user_name; // একদম ক্লিন ও টাইপ-সেফ
+    }
+    return session;
+  },
+},
 });

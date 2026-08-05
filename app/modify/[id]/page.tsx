@@ -16,6 +16,8 @@ type InvoiceResponse = NonNullable<Awaited<ReturnType<typeof getInvoiceId>>>;
 interface FormState {
   date: string;
   customer: string;
+  customerNumber: string;
+  customerAddress: string;
   discount: number | "";
   received: number | "";
   paymentType: string;
@@ -26,12 +28,23 @@ interface FormState {
 const initialFormState: FormState = {
   date: "",
   customer: "",
+  customerNumber: "",
+  customerAddress: "",
   discount: 0,
   received: 0,
   paymentType: "Cash",
   description: "",
   uid: "",
 };
+
+const DEFAULT_UNITS = [
+  "Box",
+  "Pieces (pcs)",
+  "Kilogram (kg)",
+  "Gram (g)",
+  "Liter (l)",
+  "Meter (m)",
+];
 
 export default function ModifyPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -48,7 +61,7 @@ export default function ModifyPage({ params }: { params: Promise<{ id: string }>
   const [quantity, setQuantity] = useState("");
   const [unit, setUnit] = useState("");
   const [price, setPrice] = useState("");
-  const [category, setCategory] = useState("");
+  const [, setCategory] = useState("");
 
   // Stock search state
   const [isPending, startTransition] = useTransition();
@@ -57,20 +70,14 @@ export default function ModifyPage({ params }: { params: Promise<{ id: string }>
   const [showDropdown, setShowDropdown] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
-  const [units, setUnits] = useState([
-    "Box",
-    "Pieces (pcs)",
-    "Kilogram (kg)",
-    "Gram (g)",
-    "Liter (l)",
-    "Meter (m)",
-  ]);
+  const [units, setUnits] = useState<string[]>(DEFAULT_UNITS);
   const [newUnit, setNewUnit] = useState("");
 
   const updateForm = useCallback((updates: Partial<FormState>) => {
     setFormState((prev) => ({ ...prev, ...updates }));
   }, []);
 
+  // Fetch initial invoice details
   useEffect(() => {
     let cancelled = false;
 
@@ -78,7 +85,7 @@ export default function ModifyPage({ params }: { params: Promise<{ id: string }>
       try {
         const data = await getInvoiceId(Number(id));
 
-        if (cancelled) return;
+        if (cancelled || !data) return;
 
         setInvoice(data);
 
@@ -93,7 +100,6 @@ export default function ModifyPage({ params }: { params: Promise<{ id: string }>
         setItems(itemsWithTotal);
 
         const calculatedSubtotal = itemsWithTotal.reduce((acc, item) => acc + item.total, 0);
-        // Calculate initial percentage value from stored flat discount amount
         const initialDiscountPercent =
           calculatedSubtotal > 0 && data.discount
             ? Math.round(((Number(data.discount) / calculatedSubtotal) * 100) * 100) / 100
@@ -105,13 +111,15 @@ export default function ModifyPage({ params }: { params: Promise<{ id: string }>
               ? new Date(data.date).toISOString().split("T")[0]
               : "",
           customer: data.customer || "",
+          customerNumber: data.customer_number || "",
+          customerAddress: data.customer_address || "",
           discount: initialDiscountPercent,
           received: data.received || 0,
           paymentType: data.paymentType || "Cash",
           description: data.description || "",
           uid: data.uid || "",
         });
-      } catch (error) {
+      } catch (error: unknown) {
         if (cancelled) return;
         toast.error("Failed to load invoice");
         console.error(error);
@@ -131,34 +139,54 @@ export default function ModifyPage({ params }: { params: Promise<{ id: string }>
     };
   }, [id, router, setItems, clearItems]);
 
-  // Debounced product search
+  // Debounced product search with race-condition prevention
   useEffect(() => {
     if (!showAddModal) return;
+
+    let isCurrent = true;
 
     const timer = setTimeout(() => {
       startTransition(async () => {
         try {
           const results = await searchProducts(search);
-          setSearchResults(results);
-        } catch (error) {
-          console.error("Failed to search products:", error);
-          toast.error("Failed to fetch products");
+          if (isCurrent) {
+            setSearchResults(results);
+          }
+        } catch (error: unknown) {
+          if (isCurrent) {
+            console.error("Failed to search products:", error);
+            toast.error("Failed to fetch products");
+          }
         }
       });
     }, 300);
 
-    return () => clearTimeout(timer);
+    return () => {
+      isCurrent = false;
+      clearTimeout(timer);
+    };
   }, [search, showAddModal]);
 
-  // Close dropdown on outside click
+  // Handle outside click & Escape key for modal
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
         setShowDropdown(false);
       }
     };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setShowAddModal(false);
+      }
+    };
+
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
   }, []);
 
   const onSelectStock = (item: Product) => {
@@ -179,9 +207,19 @@ export default function ModifyPage({ params }: { params: Promise<{ id: string }>
     setSearchResults([]);
   };
 
-  const { date, customer, discount, received, paymentType, description, uid } = formState;
+  const {
+    date,
+    customer,
+    customerNumber,
+    customerAddress,
+    discount,
+    received,
+    paymentType,
+    description,
+    uid,
+  } = formState;
 
-  // Percentage-only calculations
+  // Percentage calculations
   const subtotal = items.reduce((acc, item) => acc + item.quantity * item.price, 0);
   const discountAmount = (subtotal * Number(discount || 0)) / 100;
   const cappedDiscount = Math.min(discountAmount, subtotal);
@@ -192,7 +230,7 @@ export default function ModifyPage({ params }: { params: Promise<{ id: string }>
   const onAddItemSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!itemName || !quantity || !unit || !price) {
-      toast.error("Please fill all fields");
+      toast.error("Please fill all required fields");
       return;
     }
 
@@ -208,14 +246,16 @@ export default function ModifyPage({ params }: { params: Promise<{ id: string }>
     toast.success("Item added successfully!");
     clearSelection();
     setQuantity("");
+    setNewUnit("");
     setShowAddModal(false);
   };
 
   const onAddUnit = () => {
-    if (newUnit.trim() && !units.includes(newUnit)) {
-      setUnits((prev) => [...prev, newUnit]);
-      setUnit(newUnit);
-      toast.success(`Unit "${newUnit}" added`);
+    const trimmed = newUnit.trim();
+    if (trimmed && !units.includes(trimmed)) {
+      setUnits((prev) => [...prev, trimmed]);
+      setUnit(trimmed);
+      toast.success(`Unit "${trimmed}" added`);
       setNewUnit("");
     }
   };
@@ -233,9 +273,11 @@ export default function ModifyPage({ params }: { params: Promise<{ id: string }>
       uid: String(uid),
       date,
       customer,
+      customer_number: customerNumber,
+      customer_address: customerAddress,
       items,
       subtotal,
-      discount: cappedDiscount, // Flat calculated amount sent to server
+      discount: cappedDiscount,
       total,
       received: Number(received || 0),
       due: balance,
@@ -243,14 +285,14 @@ export default function ModifyPage({ params }: { params: Promise<{ id: string }>
       paymentType,
     };
 
-    const loadingToast = toast.loading("Updating...");
+    const loadingToast = toast.loading("Updating invoice...");
 
     try {
       await modifyInvoice(invoice.id, invoiceData);
-      toast.success("Updated!", { id: loadingToast });
+      toast.success("Updated successfully!", { id: loadingToast });
       clearItems();
       router.push("/");
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Error updating invoice:", error);
       toast.error(
         error instanceof Error ? error.message : "Something went wrong",
@@ -289,10 +331,7 @@ export default function ModifyPage({ params }: { params: Promise<{ id: string }>
   return (
     <>
       <div className="max-w-5xl lg:mx-auto p-3 sm:p-6">
-        <form
-          onSubmit={handleSubmit}
-          className="grid grid-cols-1 lg:grid-cols-2 gap-10"
-        >
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-2 gap-10">
           {/* LEFT COLUMN */}
           <div className="space-y-4">
             <section className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-xl">
@@ -304,7 +343,7 @@ export default function ModifyPage({ params }: { params: Promise<{ id: string }>
                   type="text"
                   value={uid}
                   readOnly
-                  className="w-full bg-transparent font-bold outline-none text-gray-500"
+                  className="w-full bg-transparent font-bold outline-none text-gray-500 cursor-not-allowed"
                 />
               </div>
               <div>
@@ -332,6 +371,34 @@ export default function ModifyPage({ params }: { params: Promise<{ id: string }>
               <label className="absolute left-0 top-3 text-gray-400 pointer-events-none transition-all peer-focus:-top-4 peer-focus:text-xs peer-focus:text-black peer-[:not(:placeholder-shown)]:-top-4 peer-[:not(:placeholder-shown)]:text-xs">
                 Customer Name
               </label>
+            </div>
+
+            {/* Customer Phone */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-400">
+                Customer Phone Number
+              </label>
+              <input
+                type="tel"
+                placeholder="e.g. 01712345678"
+                value={customerNumber}
+                onChange={(e) => updateForm({ customerNumber: e.target.value })}
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:bg-white focus:border-transparent outline-none transition-all text-sm"
+              />
+            </div>
+
+            {/* Customer Address */}
+            <div className="space-y-2">
+              <label className="block font-bold text-sm text-gray-600">
+                Customer Address
+              </label>
+              <textarea
+                rows={2}
+                value={customerAddress}
+                onChange={(e) => updateForm({ customerAddress: e.target.value })}
+                className="w-full p-3 border-2 border-gray-100 rounded-xl bg-white outline-none focus:border-black text-sm transition-all"
+                placeholder="Click to add address..."
+              />
             </div>
 
             <div className="space-y-3">
@@ -365,7 +432,7 @@ export default function ModifyPage({ params }: { params: Promise<{ id: string }>
                   ৳{subtotal.toLocaleString()}
                 </span>
               </div>
-              
+
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">Discount (%)</span>
                 <div className="flex items-center gap-2">
@@ -385,7 +452,6 @@ export default function ModifyPage({ params }: { params: Promise<{ id: string }>
                 </div>
               </div>
 
-              {/* Discount Amount Preview */}
               {cappedDiscount > 0 && (
                 <div className="flex justify-between text-xs text-gray-400 px-1">
                   <span>Discount Applied</span>
@@ -409,7 +475,7 @@ export default function ModifyPage({ params }: { params: Promise<{ id: string }>
                       ? "bg-yellow-400 border-yellow-500"
                       : "border-gray-300"
                   }`}
-                ></div>
+                />
                 <span className="font-medium">Received Amount</span>
                 <input
                   type="number"
@@ -531,7 +597,9 @@ export default function ModifyPage({ params }: { params: Promise<{ id: string }>
                     placeholder="Type product name or category..."
                     value={search}
                     onChange={(e) => {
-                      setSearch(e.target.value);
+                      const val = e.target.value;
+                      setSearch(val);
+                      setItemName(val);
                       setShowDropdown(true);
                     }}
                     onFocus={() => setShowDropdown(true)}
@@ -606,6 +674,8 @@ export default function ModifyPage({ params }: { params: Promise<{ id: string }>
                     value={quantity}
                     onChange={(e) => setQuantity(e.target.value)}
                     required
+                    min="0.01"
+                    step="0.01"
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-black/10 focus:bg-white outline-none transition-all"
                   />
                 </div>
@@ -620,8 +690,8 @@ export default function ModifyPage({ params }: { params: Promise<{ id: string }>
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-black/10 focus:bg-white outline-none transition-all appearance-none cursor-pointer"
                   >
                     <option value="">Select</option>
-                    {units.map((u, idx) => (
-                      <option key={idx} value={u}>
+                    {units.map((u) => (
+                      <option key={u} value={u}>
                         {u}
                       </option>
                     ))}
@@ -656,6 +726,8 @@ export default function ModifyPage({ params }: { params: Promise<{ id: string }>
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
                   required
+                  min="0"
+                  step="0.01"
                   className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-black/10 focus:bg-white outline-none transition-all font-medium"
                 />
               </div>

@@ -25,7 +25,7 @@ export default function AddItemPage() {
   const [unit, setUnit] = useState("");
   const [price, setPrice] = useState("");
   const [category, setCategory] = useState("");
-
+  
   const [units, setUnits] = useState([
     "Box",
     "Pieces (pcs)",
