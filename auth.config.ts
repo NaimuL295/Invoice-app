@@ -1,3 +1,4 @@
+// auth.config.ts
 import type { NextAuthConfig } from "next-auth";
 import Google from "next-auth/providers/google";
 
@@ -18,20 +19,21 @@ export const authConfig = {
     authorized({ auth, request }) {
       const isLoggedIn = !!auth?.user;
       const pathname = request.nextUrl.pathname;
+
       const protectedRoutes = [
         "/dashboard",
         "/create",
         "/modify",
         "/profile",
         "/print-settings",
-       "/products/create",
+        "/products/create",
         "/allproducts",
-         "/transaction",
-        "/transaction-history"
+        "/transaction",
+        "/transaction-history",
       ];
 
       const isProtectedRoute = protectedRoutes.some((route) =>
-        pathname.startsWith(route),
+        pathname.startsWith(route)
       );
 
       if (isProtectedRoute) {

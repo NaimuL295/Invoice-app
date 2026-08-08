@@ -3,6 +3,8 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
+
+
 export async function getInvoices() {
   const session = await auth();
 
@@ -13,11 +15,13 @@ export async function getInvoices() {
   try {
     const invoices = await prisma.invoice.findMany({
       where: { userId: Number(session.user.id) },
-      orderBy: { id: "desc" },
+      orderBy: { createdAt: "desc" },
       select: {
         id: true,
         uid: true,
         customer: true,
+        customer_number: true,
+        customer_address: true,
         date: true,
         subtotal: true,
         total: true,
@@ -31,16 +35,19 @@ export async function getInvoices() {
         user: {
           select: {
             id: true,
-            user_name: true,
             email: true,
-            printLayout: true,
-            createdAt: true,
-            googleId: true,
-            emailVerified: true,
+            user_name: true,
             image: true,
-            qrcodelink: true,
-            address: true,
-            phone: true,
+          },
+        },
+        items: {
+          select: {
+            id: true,
+            item_name: true,
+            quantity: true,
+            unit: true,
+            price: true,
+            invoiceId: true,
           },
         },
       },
@@ -48,13 +55,10 @@ export async function getInvoices() {
 
     return invoices;
   } catch (error) {
-    console.error(error);
-    throw new Error("Something went wrong while fetching invoices");
+    console.error("Fetch Invoices Error:", error);
+    throw new Error("Something went wrong while fetching invoices.");
   }
 }
-
-
-
 
 export async function getTransactionHistory(startDate: string, endDate: string) {
   const session = await auth();
@@ -64,12 +68,16 @@ export async function getTransactionHistory(startDate: string, endDate: string) 
   }
 
   try {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999); // Ensures all invoices on the end date are included
+
     const invoices = await prisma.invoice.findMany({
       where: {
         userId: Number(session.user.id),
         date: {
-          gte: new Date(startDate),
-          lte: new Date(endDate),
+          gte: start,
+          lte: end,
         },
       },
       orderBy: { date: "asc" },
@@ -77,6 +85,7 @@ export async function getTransactionHistory(startDate: string, endDate: string) 
         id: true,
         uid: true,
         customer: true,
+        customer_number: true,
         date: true,
         total: true,
         received: true,
@@ -87,25 +96,26 @@ export async function getTransactionHistory(startDate: string, endDate: string) 
 
     let runningBalance = 0;
 
- const transactions = invoices.map((invoice) => {
+    const transactions = invoices.map((invoice) => {
       runningBalance += (invoice.received ?? 0) - (invoice.due ?? 0);
 
       return {
         id: invoice.uid ?? String(invoice.id),
-        customer: invoice.customer,        // ← ei line ta ache to?
+        customer: invoice.customer,
+        customerNumber: invoice.customer_number ?? "",
         date: invoice.date,
         description: invoice.description ?? `Invoice - ${invoice.customer}`,
         type: (invoice.due ?? 0) > 0 ? "debit" : "credit",
         amount: invoice.total,
+        received: invoice.received ?? 0,
         due: invoice.due ?? 0,
         balance: runningBalance,
       };
     });
 
-
     return transactions.reverse();
   } catch (error) {
-    console.error(error);
-    throw new Error("Something went wrong while fetching transaction history");
+    console.error("Fetch History Error:", error);
+    throw new Error("Something went wrong while fetching transaction history.");
   }
 }

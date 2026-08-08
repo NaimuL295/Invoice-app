@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { Loader2 } from "lucide-react";
+import { registerAction } from "@/app/actions/register";
+import Link from "next/link";
 
 export default function RegisterPage() {
   const [userName, setUserName] = useState("");
@@ -11,47 +13,43 @@ export default function RegisterPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
+const handleRegister = async (e: React.FormEvent) => {
+  e.preventDefault();
 
-    try {
-      // ১. রেজিস্ট্রেশন API কল
-      const res = await fetch("/api/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_name: userName, email, password }),
-      });
+  setError("");
+  setLoading(true);
 
-      const data = await res.json();
+  try {
+    const formData = new FormData();
+    formData.append("user_name", userName);
+    formData.append("email", email);
+    formData.append("password", password);
 
-      if (!res.ok) {
-        setLoading(false);
-        setError(data.error || "Kichu bhul hoyeche");
-        return;
-      }
+    const result = await registerAction(formData);
 
-      // ২. রেজিস্ট্রেশন সফল হলে অটো-লগইন
-      const loginRes = await signIn("credentials", {
-        email,
-        password,
-        redirect: false,
-      });
-
-      if (loginRes?.error) {
-        // লগইনে সমস্যা হলে হার্ড রিফ্রেশসহ লগইন পেজে নিয়ে যাবে
-        window.location.href = "/auth/login";
-        return;
-      }
-
-      // ৩. লগইন সফল হলে পুরো ওয়েবসাইট হার্ড রিফ্রেশ হয়ে ড্যাশবোর্ডে যাবে
-      window.location.href = "/dashboard";
-    } catch (err) {
-      setError("An unexpected error occurred");
-      setLoading(false);
+    if (!result.success) {
+      setError(result.error ?? "Registration failed");
+      return;
     }
-  };
+
+    const loginRes = await signIn("credentials", {
+      email,
+      password,
+      redirect: false,
+    });
+
+    if (loginRes?.error) {
+      window.location.href = "/auth/login";
+      return;
+    }
+
+    window.location.href = "/dashboard";
+  } catch {
+    setError("Something went wrong");
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleGoogleLogin = () => {
     signIn("google", { callbackUrl: "/dashboard" });
@@ -144,9 +142,9 @@ export default function RegisterPage() {
 
         <p className="text-center text-sm text-gray-500">
           Already account ?{" "}
-          <a href="/auth/login" className="text-black font-semibold hover:underline">
+          <Link href="/auth/login" className="text-black font-semibold hover:underline">
             Login
-          </a>
+          </Link>
         </p>
       </div>
     </div>

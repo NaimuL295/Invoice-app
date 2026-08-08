@@ -43,7 +43,7 @@ export default function Navbar() {
               </div>
               {!collapsed && (
                 <span className="text-xl font-bold tracking-tight text-slate-900 whitespace-nowrap">
-                  QuickBill
+                <Link href="/">QuickBill</Link>
                 </span>
               )}
             </div>

@@ -32,6 +32,7 @@ const styles = StyleSheet.create({
   },
   companyName: {
     fontSize: 14,
+    fontFamily: "Helvetica-Bold",
     fontWeight: "bold",
     textAlign: "right",
   },
@@ -39,6 +40,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: 16,
     color: "#7c3aed",
+    fontFamily: "Helvetica-Bold",
     marginVertical: 10,
     textTransform: "capitalize",
   },
@@ -48,6 +50,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#9ca3af",
     padding: 5,
     color: "white",
+    fontFamily: "Helvetica-Bold",
     fontWeight: "bold",
   },
   infoContent: {
@@ -55,6 +58,14 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     padding: 5,
     marginBottom: 10,
+  },
+  customerBox: {
+    maxWidth: "60%",
+  },
+  customerName: {
+    fontFamily: "Helvetica-Bold",
+    fontWeight: "bold",
+    marginBottom: 2,
   },
   table: {
     width: "auto",
@@ -67,6 +78,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     backgroundColor: "#9ca3af",
     color: "white",
+    fontFamily: "Helvetica-Bold",
     fontWeight: "bold",
   },
   tableRow: {
@@ -79,6 +91,7 @@ const styles = StyleSheet.create({
   totalRow: {
     flexDirection: "row",
     backgroundColor: "#ffffff",
+    fontFamily: "Helvetica-Bold",
     fontWeight: "bold",
     minHeight: 25,
     alignItems: "center",
@@ -108,6 +121,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#9ca3af",
     color: "white",
     padding: 4,
+    fontFamily: "Helvetica-Bold",
     fontWeight: "bold",
     marginBottom: 5,
   }
@@ -116,11 +130,17 @@ const styles = StyleSheet.create({
 export default function LayoutOne({ title, data }: LayoutProps) {
   const invoiceData = {
     user_name: data?.user_name || "Company Name",
-    companyEmail: data?.email || "email@example.com",
+    companyEmail: data?.companyEmail || data?.email || "email@example.com",
+    customer_number: data?.customer_number || "",
+    customer_address: data?.customer_address || "",
     invoiceNo: data?.uid || data?.id || "0",
     billTo: data?.customer || "Customer Name",
     date: data?.date
-      ? new Date(data.date).toLocaleDateString()
+      ? new Date(data.date).toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "2-digit",
+        })
       : "00-00-0000",
     items: data?.items || [],
     received: Number(data?.received) || 0,
@@ -157,12 +177,12 @@ export default function LayoutOne({ title, data }: LayoutProps) {
               // eslint-disable-next-line jsx-a11y/alt-text
               <Image src={invoiceData.user.image} style={styles.logoImage} />
             ) : (
-              <Text style={{ color: "white", fontWeight: "bold" }}>Logo</Text>
+              <Text style={{ color: "white", fontFamily: "Helvetica-Bold", fontWeight: "bold" }}>Logo</Text>
             )}
           </View>
           <View>
             <Text style={styles.companyName}>
-              {invoiceData.user?.email || invoiceData.user_name}
+              {invoiceData.user_name}
             </Text>
             <Text style={{ textAlign: 'right', fontSize: 8 }}>Email: {invoiceData.companyEmail}</Text>
           </View>
@@ -177,9 +197,17 @@ export default function LayoutOne({ title, data }: LayoutProps) {
         </View>
 
         <View style={styles.infoContent}>
-          <Text style={{ fontWeight: 'bold' }}>{invoiceData.billTo}</Text>
+          <View style={styles.customerBox}>
+            <Text style={styles.customerName}>{invoiceData.billTo}</Text>
+            {invoiceData.customer_number ? (
+              <Text style={{ color: "#444" }}>Phone: {invoiceData.customer_number}</Text>
+            ) : null}
+            {invoiceData.customer_address ? (
+              <Text style={{ color: "#444" }}>Address: {invoiceData.customer_address}</Text>
+            ) : null}
+          </View>
           <View>
-            <Text style={{ textAlign: 'right' }}>Invoice No.: {invoiceData.invoiceNo}</Text>
+            <Text style={{ textAlign: 'right' }}>Invoice No.: #{invoiceData.invoiceNo}</Text>
             <Text style={{ textAlign: 'right' }}>Date: {invoiceData.date}</Text>
           </View>
         </View>
@@ -199,7 +227,7 @@ export default function LayoutOne({ title, data }: LayoutProps) {
             const qty = Number(item.quantity) || 0;
             const price = Number(item.price) || 0;
             return (
-              <View style={styles.tableRow} key={index}>
+              <View style={styles.tableRow} key={item.id || index}>
                 <Text style={styles.col1}>{index + 1}</Text>
                 <Text style={styles.col2}>{item.item_name}</Text>
                 <Text style={styles.col3}>{qty}</Text>
@@ -213,11 +241,13 @@ export default function LayoutOne({ title, data }: LayoutProps) {
           {/* Table Totals Row */}
           <View style={styles.totalRow}>
             <Text style={[styles.col1, { borderRightWidth: 0 }]}></Text>
-            <Text style={[styles.col2, { fontWeight: 'bold' }]}>Total</Text>
-            <Text style={[styles.col3, { fontWeight: 'bold' }]}></Text>
+            <Text style={[styles.col2, { fontFamily: 'Helvetica-Bold', fontWeight: 'bold' }]}>Total</Text>
+            <Text style={styles.col3}></Text>
             <Text style={styles.col4}></Text>
             <Text style={styles.col5}></Text>
-            <Text style={[styles.col6, { fontWeight: 'bold' }]}>{invoiceData.subtotal.toFixed(2)}</Text>
+            <Text style={[styles.col6, { fontFamily: 'Helvetica-Bold', fontWeight: 'bold' }]}>
+              {invoiceData.subtotal.toFixed(2)}
+            </Text>
           </View>
         </View>
 
@@ -234,35 +264,40 @@ export default function LayoutOne({ title, data }: LayoutProps) {
           {/* Breakdown Ledger */}
           <View style={styles.summaryBox}>
             <View style={[styles.summaryRow, { backgroundColor: '#9ca3af', color: 'white', padding: 4 }]}>
-              <Text style={{ fontWeight: 'bold' }}>Amounts Ledger</Text>
+              <Text style={{ fontFamily: 'Helvetica-Bold', fontWeight: 'bold' }}>Amounts Ledger</Text>
               <Text></Text>
             </View>
             <View style={styles.summaryRow}>
               <Text>Sub Total</Text>
               <Text>{invoiceData.subtotal.toFixed(2)}</Text>
             </View>
-            <View style={styles.summaryRow}>
-              <Text>
-                Discount{calculatedDiscountPercent > 0 ? ` (${calculatedDiscountPercent}%)` : ""}
-              </Text>
-              <Text>-{invoiceData.discountAmount.toFixed(2)}</Text>
-            </View>
-            <View style={[styles.summaryRow, { fontWeight: 'bold' }]}>
+            {invoiceData.discountAmount > 0 && (
+              <View style={styles.summaryRow}>
+                <Text>
+                  Discount{calculatedDiscountPercent > 0 ? ` (${calculatedDiscountPercent}%)` : ""}
+                </Text>
+                <Text>-{invoiceData.discountAmount.toFixed(2)}</Text>
+              </View>
+            )}
+            <View style={[styles.summaryRow, { fontFamily: 'Helvetica-Bold', fontWeight: 'bold' }]}>
               <Text>Total</Text>
-              <Text>{invoiceData.total.toFixed(2)}</Text>
+              <Text>Tk. {invoiceData.total.toFixed(2)}</Text>
             </View>
             <View style={styles.summaryRow}>
               <Text>Received</Text>
               <Text>{invoiceData.received.toFixed(2)}</Text>
             </View>
-          
+            <View style={[styles.summaryRow, balanceDue > 0 ? { fontFamily: 'Helvetica-Bold', fontWeight: 'bold' } : {}]}>
+              <Text>Balance Due</Text>
+              <Text>{balanceDue.toFixed(2)}</Text>
+            </View>
           </View>
         </View>
 
         {/* Footer Area */}
         <View style={{ marginTop: 40, alignItems: 'flex-end' }}>
           <View style={{ borderTopWidth: 1, borderTopColor: '#000', width: 150, paddingTop: 5 }}>
-            <Text style={{ textAlign: 'center', fontSize: 9 }}>Authorized Signatory </Text>
+            <Text style={{ textAlign: 'center', fontSize: 9 }}>Authorized Signatory</Text>
           </View>
         </View>
 

@@ -1,13 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { Loader2 } from "lucide-react";
 
-export default function LoginForm() {
+function LoginFormContent() {
   const searchParams = useSearchParams();
+
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
+  const isResetSuccess = searchParams.get("reset") === "success";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -27,13 +30,12 @@ export default function LoginForm() {
       });
 
       if (res?.error) {
-        setError("Email ba password bhul");
+        setError("Email অথবা password ভুল হয়েছে।");
         setLoading(false);
         return;
       }
 
       if (res?.ok) {
-        // পুরো ওয়েবসাইট ব্রাউজার থেকে হার্ড রিফ্রেশ হয়ে নতুন URL-এ যাবে
         window.location.href = callbackUrl;
       }
     } catch (err) {
@@ -54,27 +56,51 @@ export default function LoginForm() {
           <p className="text-sm text-gray-500">তোমার অ্যাকাউন্টে প্রবেশ করো</p>
         </div>
 
-        <form onSubmit={handleCredentialsLogin} className="space-y-4">
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            className="w-full px-4 py-2.5 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all text-sm"
-          />
+        {/* Password Reset Success Notification */}
+        {isResetSuccess && (
+          <div className="bg-green-50 border border-green-200 text-green-700 text-sm px-3 py-2.5 rounded-lg text-center font-medium">
+            পাসওয়ার্ড সফলভাবে পরিবর্তন হয়েছে! নতুন পাসওয়ার্ড দিয়ে লগইন করুন।
+          </div>
+        )}
 
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            className="w-full px-4 py-2.5 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all text-sm"
-          />
+        <form onSubmit={handleCredentialsLogin} className="space-y-4">
+          <div>
+            <label htmlFor="email" className="sr-only">
+              Email
+            </label>
+            <input
+              id="email"
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              autoComplete="email"
+              className="w-full px-4 py-2.5 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all text-sm"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="password" className="sr-only">
+              Password
+            </label>
+            <input
+              id="password"
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              autoComplete="current-password"
+              className="w-full px-4 py-2.5 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all text-sm"
+            />
+          </div>
+
+
+
 
           {error && (
-            <p className="text-red-500 text-sm bg-red-50 px-3 py-2 rounded-lg">
+            <p className="text-red-500 text-sm bg-red-50 px-3 py-2 rounded-lg text-center">
               {error}
             </p>
           )}
@@ -82,7 +108,7 @@ export default function LoginForm() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full flex items-center justify-center gap-2 bg-black text-white py-2.5 rounded-lg font-semibold hover:bg-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-2 bg-black hover:bg-green-600 text-white py-2.5 rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading && <Loader2 className="w-4 h-4 animate-spin" />}
             {loading ? "Logging in..." : "Login"}
@@ -92,8 +118,16 @@ export default function LoginForm() {
         <div className="flex items-center gap-3">
           <div className="flex-1 h-px bg-gray-200" />
           <span className="text-xs text-gray-400">OR</span>
+
+
           <div className="flex-1 h-px bg-gray-200" />
         </div>
+        <p className="text-center">  <Link
+          href="/auth/forgot-password"
+          className="text-xs text-gray-500 hover:text-black hover:underline transition-colors "
+        >
+          Forgot password?
+        </Link></p>
 
         <button
           onClick={handleGoogleLogin}
@@ -122,12 +156,30 @@ export default function LoginForm() {
         </button>
 
         <p className="text-center text-sm text-gray-500">
-          Account?{" "}
-          <a href="/auth/register" className="text-black font-semibold hover:underline">
+          Don t have an account?{" "}
+          <Link
+            href="/auth/register"
+            className="text-black font-semibold hover:underline"
+          >
             Register
-          </a>
+          </Link>
         </p>
       </div>
     </div>
+  );
+}
+
+// Suspense wrapper to safely use searchParams during build & SSR
+export default function LoginForm() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+        </div>
+      }
+    >
+      <LoginFormContent />
+    </Suspense>
   );
 }

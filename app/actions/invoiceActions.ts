@@ -1,5 +1,6 @@
-"use server"; // KEEP this here
+"use server";
 
+import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { Item } from "@/types/next-auth";
@@ -8,6 +9,8 @@ export async function createInvoice(data: {
   uid?: string;
   date?: string;
   customer: string;
+  customer_number: number | string;
+  customer_address: string;
   items: Item[];
   subtotal: number | string;
   total: number | string;
@@ -24,11 +27,15 @@ export async function createInvoice(data: {
       throw new Error("Unauthorized");
     }
 
+    const userId = Number(session.user.id);
+
     const invoiceCreate = await prisma.invoice.create({
       data: {
         uid: data.uid || undefined,
         date: data.date ? new Date(data.date) : new Date(),
         customer: data.customer,
+        customer_number: String(data.customer_number),
+        customer_address: data.customer_address,
         subtotal: Number(data.subtotal),
         discount: Number(data.discount || 0),
         received: Number(data.received || 0),
@@ -37,7 +44,7 @@ export async function createInvoice(data: {
         description: data.description,
         paymentType: data.paymentType,
         user: {
-          connect: { id: Number(session.user.id) },
+          connect: { id: userId },
         },
         items: {
           create: data.items.map((item: Item) => ({
@@ -53,6 +60,7 @@ export async function createInvoice(data: {
       },
     });
 
+    revalidatePath("/");
     return invoiceCreate;
   } catch (error: unknown) {
     console.error("Prisma Creation Error:", error);
@@ -61,7 +69,7 @@ export async function createInvoice(data: {
       throw new Error(error.message);
     }
 
-    throw new Error("An unexpected error occurred.");
+    throw new Error("An unexpected error occurred while creating invoice.");
   }
 }
 
@@ -72,21 +80,33 @@ export async function deleteInvoice(id: number) {
     throw new Error("Unauthorized");
   }
 
+  const userId = Number(session.user.id);
+
   try {
-    const deletedInvoice = await prisma.invoice.delete({
-      where: {
-        id: id,
-      },
+    // Ensuring user owns the invoice before deleting (Tenant Isolation)
+    const existing = await prisma.invoice.findFirst({
+      where: { id, userId },
     });
 
+    if (!existing) {
+      throw new Error("Invoice not found or unauthorized access.");
+    }
+
+    const deletedInvoice = await prisma.invoice.delete({
+      where: { id },
+    });
+
+    revalidatePath("/");
     return {
       success: true,
       message: `Invoice ${deletedInvoice.uid} and its items were deleted.`,
     };
   } catch (error: unknown) {
-    // Safely check for Prisma error codes without using 'any'
+    if (error instanceof Error) {
+      throw new Error(error.message);
+    }
+
     if (error && typeof error === "object" && "code" in error) {
-      // P2025 = Prisma error code for "Record to delete does not exist"
       if (error.code === "P2025") {
         throw new Error("Invoice not found.");
       }
@@ -141,6 +161,8 @@ export async function modifyInvoice(
   data: {
     date?: string;
     customer?: string;
+    customer_number?: number | string;
+    customer_address?: string;
     items?: Item[];
     subtotal?: number | string;
     total?: number | string;
@@ -149,7 +171,7 @@ export async function modifyInvoice(
     due?: number | string;
     paymentType?: string;
     description?: string;
-  },
+  }
 ) {
   const session = await auth();
 
@@ -166,6 +188,10 @@ export async function modifyInvoice(
       data: {
         date: data.date ? new Date(data.date) : undefined,
         customer: data.customer || undefined,
+        customer_number: data.customer_number
+          ? String(data.customer_number)
+          : undefined,
+        customer_address: data.customer_address || undefined,
         subtotal:
           data.subtotal !== undefined ? Number(data.subtotal) : undefined,
         discount:
@@ -192,19 +218,17 @@ export async function modifyInvoice(
       include: { items: true },
     });
 
+    revalidatePath("/");
     return updatedInvoice;
   } catch (error: unknown) {
     console.error("Update Error:", error);
 
-    // 1. Check if the error is an object containing a Prisma error code
     if (error && typeof error === "object" && "code" in error) {
-      // P2025: "An operation failed because a record was not found."
       if (error.code === "P2025") {
-        throw new Error("Invoice not found");
+        throw new Error("Invoice not found or unauthorized");
       }
     }
 
-    // Fallback error message for unexpected database or system crashes
     const message =
       error instanceof Error ? error.message : "Error updating invoice";
     throw new Error(message);

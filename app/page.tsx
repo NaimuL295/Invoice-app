@@ -11,9 +11,9 @@ export default async function HomePage() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-50">
+    <main className="min-h-screen ">
       {/* Navbar */}
-      <header className="border-b bg-white">
+      <header >
         <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <span className="text-xl font-bold text-gray-900">InvoiceApp</span>
           <div className="flex gap-4">
@@ -25,7 +25,7 @@ export default async function HomePage() {
             </Link>
             <Link
               href="/auth/register"
-              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+              className="rounded-md bg-green-500  px-4 py-2 text-sm font-medium text-white hover:bg-green-600"
             >
               Get Started
             </Link>
@@ -45,13 +45,13 @@ export default async function HomePage() {
         <div className="mt-8 flex gap-4">
           <Link
             href="/auth/register"
-            className="rounded-md bg-blue-600 px-6 py-3 text-base font-semibold text-white hover:bg-blue-700"
+            className="rounded-md bg-green-500 px-6 py-3 text-base font-semibold  hover:bg-green-400"
           >
             Create Free Account
           </Link>
           <Link
             href="/auth/login"
-            className="rounded-md border border-gray-300 px-6 py-3 text-base font-semibold text-gray-700 hover:bg-gray-100"
+            className="rounded-md border border-gray-300 px-6 py-3 text-base font-semibold text-gray-70"
           >
             Log In
           </Link>

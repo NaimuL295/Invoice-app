@@ -22,15 +22,17 @@ model User {
   image         String? // ✅ গুগলের প্রোফাইল পিকচার সেভ করার জন্য লাগবে
 
   // রিলেশনস
-  accounts    Account[] // ✅ গুগলের মতো সোশ্যাল অ্যাকাউন্টের ডাটা এখানে থাকবে
-  sessions    Session[] // ✅ ডাটাবেজ সেশন স্ট্র্যাটেজি ব্যবহার করলে লাগবে
-  invoices    Invoice[]
-   products    Product[]
-  qrcodelink  String?
-  printLayout String?   @default("1")
-  address     String?
-  phone       String?
-  createdAt   DateTime  @default(now())
+  accounts         Account[] // ✅ গুগলের মতো সোশ্যাল অ্যাকাউন্টের ডাটা এখানে থাকবে
+  sessions         Session[] // ✅ ডাটাবেজ সেশন স্ট্র্যাটেজি ব্যবহার করলে লাগবে
+  invoices         Invoice[]
+  products         Product[]
+  qrcodelink       String?
+  printLayout      String?   @default("1")
+  address          String?
+  phone            String?
+  createdAt        DateTime  @default(now())
+  resetToken       String?
+  resetTokenExpiry DateTime?
 
   @@map("users")
 }
@@ -82,17 +84,20 @@ model Invoice {
 
   uid String? @unique @default(uuid())
 
-  customer    String
-  date        DateTime? @default(now())
-  subtotal    Float
-  total       Float
-  discount    Float?
-  due         Float?
-  received    Float
-  paymentType String
-  description String?
-  userId      Int
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  customer         String
+  date             DateTime? @default(now())
+  subtotal         Float
+  total            Float
+  discount         Float?
+  due              Float?
+  received         Float
+  paymentType      String
+  description      String?
+  customer_number  String?
+  customer_address String?
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   items     Item[]
   createdAt DateTime @default(now())
