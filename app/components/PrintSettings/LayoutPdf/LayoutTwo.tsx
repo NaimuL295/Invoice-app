@@ -2,7 +2,7 @@
 
 import { Document, Page, View, Text, Image, StyleSheet } from "@react-pdf/renderer";
 import { Invoice, Item } from "@/types/next-auth";
-import { toWords } from 'to-words';
+import { toWords } from "to-words";
 
 interface LayoutProps {
   title?: string;
@@ -15,6 +15,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontFamily: "Helvetica",
     backgroundColor: "#ffffff",
+    color: "#333333",
   },
   headerSection: {
     backgroundColor: "#9ca3af",
@@ -22,7 +23,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     padding: 15,
-    color: "black",
+    color: "#000000",
     marginBottom: 10,
   },
   logoImage: {
@@ -32,14 +33,18 @@ const styles = StyleSheet.create({
   },
   companyName: {
     fontSize: 14,
-    fontWeight: "bold",
+    fontFamily: "Helvetica-Bold",
     textAlign: "right",
+  },
+  boldText: {
+    fontFamily: "Helvetica-Bold",
   },
   invoiceTitle: {
     textAlign: "center",
     fontSize: 16,
     color: "#7c3aed",
     marginVertical: 10,
+    fontFamily: "Helvetica-Bold",
     textTransform: "capitalize",
   },
   infoBar: {
@@ -47,8 +52,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     backgroundColor: "#9ca3af",
     padding: 5,
-    color: "white",
-    fontWeight: "bold",
+    color: "#ffffff",
+    fontFamily: "Helvetica-Bold",
   },
   infoContent: {
     flexDirection: "row",
@@ -66,8 +71,8 @@ const styles = StyleSheet.create({
   tableHeader: {
     flexDirection: "row",
     backgroundColor: "#9ca3af",
-    color: "white",
-    fontWeight: "bold",
+    color: "#ffffff",
+    fontFamily: "Helvetica-Bold",
   },
   tableRow: {
     flexDirection: "row",
@@ -79,7 +84,7 @@ const styles = StyleSheet.create({
   totalRow: {
     flexDirection: "row",
     backgroundColor: "#ffffff",
-    fontWeight: "bold",
+    fontFamily: "Helvetica-Bold",
     minHeight: 25,
     alignItems: "center",
   },
@@ -106,11 +111,11 @@ const styles = StyleSheet.create({
   },
   amountWordsLabel: {
     backgroundColor: "#9ca3af",
-    color: "white",
+    color: "#ffffff",
     padding: 4,
-    fontWeight: "bold",
+    fontFamily: "Helvetica-Bold",
     marginBottom: 5,
-  }
+  },
 });
 
 export default function LayoutTwo({ title, data }: LayoutProps) {
@@ -119,8 +124,14 @@ export default function LayoutTwo({ title, data }: LayoutProps) {
     companyEmail: data?.email || "email@example.com",
     invoiceNo: data?.uid || data?.id || "0",
     billTo: data?.customer || "Customer Name",
+    customer_number: data?.customer_number || "",
+    customer_address: data?.customer_address || "",
     date: data?.date
-      ? new Date(data.date).toLocaleDateString()
+      ? new Date(data.date).toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "2-digit",
+        })
       : "00-00-0000",
     items: data?.items || [],
     received: Number(data?.received) || 0,
@@ -149,7 +160,6 @@ export default function LayoutTwo({ title, data }: LayoutProps) {
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-
         {/* Header Section */}
         <View style={styles.headerSection}>
           <View>
@@ -157,14 +167,16 @@ export default function LayoutTwo({ title, data }: LayoutProps) {
               // eslint-disable-next-line jsx-a11y/alt-text
               <Image src={invoiceData.user.image} style={styles.logoImage} />
             ) : (
-              <Text style={{ color: "white", fontWeight: "bold" }}>Logo</Text>
+              <Text style={{ color: "white", fontFamily: "Helvetica-Bold" }}>Logo</Text>
             )}
           </View>
           <View>
             <Text style={styles.companyName}>
-              {invoiceData.user?.email || invoiceData.user_name}
+              {invoiceData.user?.user_name || invoiceData.user_name}
             </Text>
-            <Text style={{ textAlign: 'right', fontSize: 8 }}>Email: {invoiceData.companyEmail}</Text>
+            <Text style={{ textAlign: "right", fontSize: 8 }}>
+              Email: {invoiceData.companyEmail}
+            </Text>
           </View>
         </View>
 
@@ -172,15 +184,27 @@ export default function LayoutTwo({ title, data }: LayoutProps) {
 
         {/* Info Blocks */}
         <View style={styles.infoBar}>
-          <Text style={{ width: '50%' }}>Bill To</Text>
-          <Text style={{ width: '50%', textAlign: 'right' }}>Invoice Details</Text>
+          <Text style={{ width: "50%" }}>Bill To</Text>
+          <Text style={{ width: "50%", textAlign: "right" }}>Invoice Details</Text>
         </View>
 
         <View style={styles.infoContent}>
-          <Text style={{ fontWeight: 'bold' }}>{invoiceData.billTo}</Text>
-          <View>
-            <Text style={{ textAlign: 'right' }}>Invoice No.: {invoiceData.invoiceNo}</Text>
-            <Text style={{ textAlign: 'right' }}>Date: {invoiceData.date}</Text>
+          <View style={{ width: "50%" }}>
+            <Text style={styles.boldText}>{invoiceData.billTo}</Text>
+            {invoiceData.customer_number ? (
+              <Text style={{ fontSize: 8, marginTop: 2 }}>
+                Phone: {invoiceData.customer_number}
+              </Text>
+            ) : null}
+            {invoiceData.customer_address ? (
+              <Text style={{ fontSize: 8, marginTop: 2 }}>
+                Address: {invoiceData.customer_address}
+              </Text>
+            ) : null}
+          </View>
+          <View style={{ width: "50%" }}>
+            <Text style={{ textAlign: "right" }}>Invoice No.: #{invoiceData.invoiceNo}</Text>
+            <Text style={{ textAlign: "right" }}>Date: {invoiceData.date}</Text>
           </View>
         </View>
 
@@ -199,7 +223,7 @@ export default function LayoutTwo({ title, data }: LayoutProps) {
             const qty = Number(item.quantity) || 0;
             const price = Number(item.price) || 0;
             return (
-              <View style={styles.tableRow} key={index}>
+              <View style={styles.tableRow} key={item.id || index}>
                 <Text style={styles.col1}>{index + 1}</Text>
                 <Text style={styles.col2}>{item.item_name}</Text>
                 <Text style={styles.col3}>{qty}</Text>
@@ -213,11 +237,13 @@ export default function LayoutTwo({ title, data }: LayoutProps) {
           {/* Table Totals Row */}
           <View style={styles.totalRow}>
             <Text style={[styles.col1, { borderRightWidth: 0 }]}></Text>
-            <Text style={[styles.col2, { fontWeight: 'bold' }]}>Total</Text>
-            <Text style={[styles.col3, { fontWeight: 'bold' }]}></Text>
+            <Text style={[styles.col2, styles.boldText]}>Total</Text>
+            <Text style={styles.col3}></Text>
             <Text style={styles.col4}></Text>
             <Text style={styles.col5}></Text>
-            <Text style={[styles.col6, { fontWeight: 'bold' }]}>{invoiceData.subtotal.toFixed(2)}</Text>
+            <Text style={[styles.col6, styles.boldText]}>
+              {invoiceData.subtotal.toFixed(2)}
+            </Text>
           </View>
         </View>
 
@@ -225,29 +251,43 @@ export default function LayoutTwo({ title, data }: LayoutProps) {
         <View style={styles.summaryContainer}>
           <View style={styles.summaryBox}>
             <Text style={styles.amountWordsLabel}>Invoice Amount In Words:</Text>
-            <Text style={{ marginBottom: 15, textTransform: 'capitalize' }}>{getAmountInWords()}</Text>
+            <Text style={{ marginBottom: 15, textTransform: "capitalize" }}>
+              {getAmountInWords()}
+            </Text>
 
             <Text style={styles.amountWordsLabel}>Terms and Conditions</Text>
-            <Text style={{ fontSize: 8, color: '#555' }}>Thank you for doing business with us.</Text>
+            <Text style={{ fontSize: 8, color: "#555" }}>
+              Thank you for doing business with us.
+            </Text>
           </View>
 
           {/* Breakdown Ledger */}
           <View style={styles.summaryBox}>
-            <View style={[styles.summaryRow, { backgroundColor: '#9ca3af', color: 'white', padding: 4 }]}>
-              <Text style={{ fontWeight: 'bold' }}>Amounts Ledger</Text>
+            <View
+              style={[
+                styles.summaryRow,
+                { backgroundColor: "#9ca3af", color: "white", padding: 4 },
+              ]}
+            >
+              <Text style={styles.boldText}>Amounts Ledger</Text>
               <Text></Text>
             </View>
             <View style={styles.summaryRow}>
               <Text>Sub Total</Text>
               <Text>{invoiceData.subtotal.toFixed(2)}</Text>
             </View>
-            <View style={styles.summaryRow}>
-              <Text>
-                Discount{calculatedDiscountPercent > 0 ? ` (${calculatedDiscountPercent}%)` : ""}
-              </Text>
-              <Text>-{invoiceData.discountAmount.toFixed(2)}</Text>
-            </View>
-            <View style={[styles.summaryRow, { fontWeight: 'bold' }]}>
+            {invoiceData.discountAmount > 0 && (
+              <View style={styles.summaryRow}>
+                <Text>
+                  Discount
+                  {calculatedDiscountPercent > 0
+                    ? ` (${calculatedDiscountPercent}%)`
+                    : ""}
+                </Text>
+                <Text>-{invoiceData.discountAmount.toFixed(2)}</Text>
+              </View>
+            )}
+            <View style={[styles.summaryRow, styles.boldText]}>
               <Text>Total</Text>
               <Text>{invoiceData.total.toFixed(2)}</Text>
             </View>
@@ -255,17 +295,28 @@ export default function LayoutTwo({ title, data }: LayoutProps) {
               <Text>Received</Text>
               <Text>{invoiceData.received.toFixed(2)}</Text>
             </View>
-         
+            <View style={[styles.summaryRow, balanceDue > 0 ? styles.boldText : {}]}>
+              <Text>Balance Due</Text>
+              <Text>{balanceDue.toFixed(2)}</Text>
+            </View>
           </View>
         </View>
 
         {/* Footer Area */}
-        <View style={{ marginTop: 40, alignItems: 'flex-end' }}>
-          <View style={{ borderTopWidth: 1, borderTopColor: '#000', width: 150, paddingTop: 5 }}>
-            <Text style={{ textAlign: 'center', fontSize: 9 }}>Authorized Signatory </Text>
+        <View style={{ marginTop: 40, alignItems: "flex-end" }}>
+          <View
+            style={{
+              borderTopWidth: 1,
+              borderTopColor: "#000",
+              width: 150,
+              paddingTop: 5,
+            }}
+          >
+            <Text style={{ textAlign: "center", fontSize: 9 }}>
+              Authorized Signatory
+            </Text>
           </View>
         </View>
-
       </Page>
     </Document>
   );

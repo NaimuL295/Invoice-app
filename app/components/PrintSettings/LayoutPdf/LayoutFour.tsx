@@ -9,7 +9,7 @@ interface LayoutProps {
   data: Invoice;
 }
 
-// 🛒 Standardized guidelines optimized for 80mm (3-inch) Thermal POS Printers
+// Standardized guidelines optimized for 80mm (3-inch) Thermal POS Printers
 const styles = StyleSheet.create({
   page: {
     paddingTop: 10,
@@ -26,12 +26,14 @@ const styles = StyleSheet.create({
   },
   companyName: {
     fontSize: 12,
+    fontFamily: "Helvetica-Bold",
     fontWeight: "bold",
     textTransform: "uppercase",
     marginBottom: 2,
   },
   receiptTitle: {
     fontSize: 10,
+    fontFamily: "Helvetica-Bold",
     fontWeight: "bold",
     marginBottom: 4,
     textTransform: "uppercase",
@@ -45,13 +47,14 @@ const styles = StyleSheet.create({
   },
   metaRow: {
     flexDirection: "row",
-    justifySpaceBetween: "space-between",
+    justifyContent: "space-between",
     marginBottom: 2,
   },
   metaLabel: {
     color: "#444444",
   },
   metaValue: {
+    fontFamily: "Helvetica-Bold",
     fontWeight: "bold",
   },
   tableHeader: {
@@ -61,6 +64,7 @@ const styles = StyleSheet.create({
     borderBottomStyle: "dashed",
     paddingBottom: 3,
     marginBottom: 3,
+    fontFamily: "Helvetica-Bold",
     fontWeight: "bold",
   },
   tableRow: {
@@ -107,6 +111,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#000000",
     fontSize: 10,
+    fontFamily: "Helvetica-Bold",
     fontWeight: "bold",
   },
   wordsText: {
@@ -120,6 +125,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
     textAlign: "center",
     fontSize: 8,
+    fontFamily: "Helvetica-Bold",
     fontWeight: "bold",
   },
 });
@@ -128,6 +134,8 @@ export default function LayoutFour({ title, data }: LayoutProps) {
   // Normalize incoming data structures safely
   const invoiceData = {
     user_name: data?.user_name || "RETAIL SHOP",
+    customer_number: data?.customer_number || "",
+    customer_address: data?.customer_address || "",
     companyEmail: data?.companyEmail || data?.email || "",
     invoiceNo: data?.uid || "0000",
     billTo: data?.customer || "Walk-in Customer",
@@ -190,6 +198,18 @@ export default function LayoutFour({ title, data }: LayoutProps) {
             <Text style={styles.metaLabel}>Cust:</Text>
             <Text style={styles.metaValue}>{invoiceData.billTo}</Text>
           </View>
+          {invoiceData.customer_number ? (
+            <View style={styles.metaRow}>
+              <Text style={styles.metaLabel}>Phone:</Text>
+              <Text style={styles.metaValue}>{invoiceData.customer_number}</Text>
+            </View>
+          ) : null}
+          {invoiceData.customer_address ? (
+            <View style={styles.metaRow}>
+              <Text style={styles.metaLabel}>Address:</Text>
+              <Text style={styles.metaValue}>{invoiceData.customer_address}</Text>
+            </View>
+          ) : null}
         </View>
 
         {/* Dynamic Item Grid */}
@@ -244,8 +264,8 @@ export default function LayoutFour({ title, data }: LayoutProps) {
           </View>
 
           <View style={styles.summaryRow}>
-            <Text style={{ fontWeight: due > 0 ? "bold" : "normal" }}>Due:</Text>
-            <Text style={{ fontWeight: due > 0 ? "bold" : "normal" }}>
+            <Text style={{ fontFamily: due > 0 ? "Helvetica-Bold" : "Helvetica", fontWeight: due > 0 ? "bold" : "normal" }}>Due:</Text>
+            <Text style={{ fontFamily: due > 0 ? "Helvetica-Bold" : "Helvetica", fontWeight: due > 0 ? "bold" : "normal" }}>
               {due.toFixed(2)}
             </Text>
           </View>

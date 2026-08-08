@@ -53,6 +53,9 @@ export interface Item {
 }
 
 export interface Invoice {
+  email: any;
+  companyEmail: any;
+  user_name: string;
   id: number;
   uid?: string | null;
   customer: string;

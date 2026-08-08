@@ -17,21 +17,28 @@ const styles = StyleSheet.create({
     color: "#333",
   },
   container: {
-    border: "1pt solid #ccc",
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderStyle: "solid",
     height: "100%",
   },
   headerTitle: {
     fontSize: 20,
     textAlign: "center",
     padding: 10,
-    borderBottom: "1pt solid #ccc",
+    borderBottomWidth: 1,
+    borderBottomColor: "#ccc",
+    borderBottomStyle: "solid",
+    fontFamily: "Helvetica-Bold",
     fontWeight: "bold",
     textTransform: "uppercase",
   },
   companySection: {
     flexDirection: "row",
     padding: 15,
-    borderBottom: "1pt solid #ccc",
+    borderBottomWidth: 1,
+    borderBottomColor: "#ccc",
+    borderBottomStyle: "solid",
     alignItems: "center",
   },
   logoBox: {
@@ -41,7 +48,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginRight: 15,
-    border: "1pt solid #e5e7eb",
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    borderStyle: "solid",
   },
   logoImage: {
     width: "100%",
@@ -52,63 +61,90 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#eef5ff",
     padding: 10,
-    border: "1pt dashed #adc6ff",
+    borderWidth: 1,
+    borderColor: "#adc6ff",
+    borderStyle: "dashed",
+  },
+  companyName: {
+    fontSize: 14,
+    fontFamily: "Helvetica-Bold",
+    fontWeight: "bold",
   },
   infoBar: {
     flexDirection: "row",
-    borderBottom: "1pt solid #ccc",
+    borderBottomWidth: 1,
+    borderBottomColor: "#ccc",
+    borderBottomStyle: "solid",
     backgroundColor: "#f9f9f9",
   },
   infoCol: {
     flex: 1,
-    padding: 5,
-    borderRight: "1pt solid #ccc",
+    padding: 8,
+    borderRightWidth: 1,
+    borderRightColor: "#ccc",
+    borderRightStyle: "solid",
   },
   label: {
+    fontFamily: "Helvetica-Bold",
     fontWeight: "bold",
     marginBottom: 2,
   },
   tableRow: {
     flexDirection: "row",
-    borderBottom: "1pt solid #ccc",
+    borderBottomWidth: 1,
+    borderBottomColor: "#ccc",
+    borderBottomStyle: "solid",
   },
   tableHeader: {
     backgroundColor: "#f0f0f0",
+    fontFamily: "Helvetica-Bold",
     fontWeight: "bold",
   },
   col1: {
     width: "5%",
-    borderRight: "1pt solid #ccc",
+    borderRightWidth: 1,
+    borderRightColor: "#ccc",
+    borderRightStyle: "solid",
     textAlign: "center",
     padding: 4,
   },
-  col2: { width: "40%", borderRight: "1pt solid #ccc", padding: 4 },
+  col2: { width: "40%", borderRightWidth: 1, borderRightColor: "#ccc", borderRightStyle: "solid", padding: 4 },
   col3: {
     width: "15%",
-    borderRight: "1pt solid #ccc",
+    borderRightWidth: 1,
+    borderRightColor: "#ccc",
+    borderRightStyle: "solid",
     textAlign: "center",
     padding: 4,
   },
   col4: {
     width: "10%",
-    borderRight: "1pt solid #ccc",
+    borderRightWidth: 1,
+    borderRightColor: "#ccc",
+    borderRightStyle: "solid",
     textAlign: "center",
     padding: 4,
   },
   col5: {
     width: "15%",
-    borderRight: "1pt solid #ccc",
+    borderRightWidth: 1,
+    borderRightColor: "#ccc",
+    borderRightStyle: "solid",
     textAlign: "right",
     padding: 4,
   },
   col6: { width: "15%", textAlign: "right", padding: 4 },
   summaryContainer: {
     flexDirection: "row",
-    borderTop: "1pt solid #ccc",
+    borderTopWidth: 1,
+    borderTopColor: "#ccc",
+    borderTopStyle: "solid",
   },
   summaryLeft: {
     width: "65%",
-    borderRight: "1pt solid #ccc",
+    borderRightWidth: 1,
+    borderRightColor: "#ccc",
+    borderRightStyle: "solid",
     padding: 10,
   },
   summaryRight: {
@@ -118,15 +154,26 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     padding: 4,
-    borderBottom: "0.5pt solid #eee",
+    borderBottomWidth: 0.5,
+    borderBottomColor: "#eee",
+    borderBottomStyle: "solid",
   },
   totalRow: {
     backgroundColor: "#f9f9f9",
+    fontFamily: "Helvetica-Bold",
     fontWeight: "bold",
-    borderBottom: "1pt solid #ccc",
+    borderBottomWidth: 1,
+    borderBottomColor: "#ccc",
+    borderBottomStyle: "solid",
+  },
+  boldText: {
+    fontFamily: "Helvetica-Bold",
+    fontWeight: "bold",
   },
   footer: {
-    borderTop: "1pt solid #ccc",
+    borderTopWidth: 1,
+    borderTopColor: "#ccc",
+    borderTopStyle: "solid",
     padding: 10,
     flexDirection: "row",
     justifyContent: "space-between",
@@ -137,22 +184,29 @@ const styles = StyleSheet.create({
 export default function LayoutThree({ title, data }: LayoutProps) {
   const invoiceData = {
     userName: data?.user?.user_name || data?.user_name || "Company Name",
-    userLogo: data?.user?.image || "Logo",
-    companyEmail: data?.email || "email@example.com",
+    userLogo: data?.user?.image || null,
+    companyEmail: data?.companyEmail || data?.email || "email@example.com",
     invoiceNo: data?.uid || data?.id || "0",
     billTo: data?.customer || "Customer Name",
+    customer_number: data?.customer_number || "",
+    customer_address: data?.customer_address || "",
     date: data?.date
-      ? new Date(data.date).toLocaleDateString()
+      ? new Date(data.date).toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "2-digit",
+        })
       : "00-00-0000",
     items: data?.items || [],
     received: Number(data?.received) || 0,
     discountAmount: Number(data?.discount) || 0, // Flat monetary discount
     subtotal: Number(data?.subtotal) || 0,
     total: Number(data?.total) || 0,
-    due: Number(data?.due) || 0,
   };
 
-  // 🟩 Calculates effective discount percentage dynamically
+  const calculatedDue = invoiceData.total - invoiceData.received;
+
+  // Calculates effective discount percentage dynamically
   const calculatedDiscountPercent = invoiceData.subtotal > 0
     ? Math.round((invoiceData.discountAmount / invoiceData.subtotal) * 100)
     : 0;
@@ -183,7 +237,7 @@ export default function LayoutThree({ title, data }: LayoutProps) {
               )}
             </View>
             <View style={styles.companyDetails}>
-              <Text style={{ fontSize: 14, fontWeight: "bold" }}>
+              <Text style={styles.companyName}>
                 {invoiceData.userName}
               </Text>
               <Text style={{ marginTop: 2 }}>Email: {invoiceData.companyEmail}</Text>
@@ -194,11 +248,17 @@ export default function LayoutThree({ title, data }: LayoutProps) {
           <View style={styles.infoBar}>
             <View style={styles.infoCol}>
               <Text style={styles.label}>Bill To:</Text>
-              <Text>{invoiceData.billTo}</Text>
+              <Text style={styles.boldText}>{invoiceData.billTo}</Text>
+              {invoiceData.customer_number ? (
+                <Text style={{ marginTop: 2 }}>Phone: {invoiceData.customer_number}</Text>
+              ) : null}
+              {invoiceData.customer_address ? (
+                <Text style={{ marginTop: 2 }}>Address: {invoiceData.customer_address}</Text>
+              ) : null}
             </View>
             <View style={[styles.infoCol, { borderRightWidth: 0 }]}>
               <Text style={styles.label}>Invoice Details:</Text>
-              <Text>No: {invoiceData.invoiceNo}</Text>
+              <Text>No: #{invoiceData.invoiceNo}</Text>
               <Text>Date: {invoiceData.date}</Text>
             </View>
           </View>
@@ -220,7 +280,7 @@ export default function LayoutThree({ title, data }: LayoutProps) {
             const rowAmount = itemQuantity * itemPrice;
 
             return (
-              <View style={styles.tableRow} key={index}>
+              <View style={styles.tableRow} key={item.id || index}>
                 <Text style={styles.col1}>{index + 1}</Text>
                 <Text style={styles.col2}>{item.item_name}</Text>
                 <Text style={styles.col3}>{itemQuantity}</Text>
@@ -234,14 +294,14 @@ export default function LayoutThree({ title, data }: LayoutProps) {
           {/* Summary Section */}
           <View style={styles.summaryContainer}>
             <View style={styles.summaryLeft}>
-              <Text style={{ fontWeight: "bold", marginBottom: 2 }}>
+              <Text style={[styles.boldText, { marginBottom: 2 }]}>
                 Invoice Amount In Words:
               </Text>
               <Text style={{ marginBottom: 12, color: "#555", textTransform: "capitalize" }}>
                 {renderAmountInWords()}
               </Text>
 
-              <Text style={{ fontWeight: "bold" }}>Terms And Conditions:</Text>
+              <Text style={styles.boldText}>Terms And Conditions:</Text>
               <Text style={{ marginTop: 5, color: "#666" }}>
                 Thank you for doing business with us.
               </Text>
@@ -252,22 +312,24 @@ export default function LayoutThree({ title, data }: LayoutProps) {
                 <Text>Sub Total:</Text>
                 <Text>{invoiceData.subtotal.toFixed(2)}</Text>
               </View>
-              <View style={styles.summaryRow}>
-                <Text>
-                  Discount{calculatedDiscountPercent > 0 ? ` (${calculatedDiscountPercent}%)` : ""}:
-                </Text>
-                <Text>-{invoiceData.discountAmount.toFixed(2)}</Text>
-              </View>
+              {invoiceData.discountAmount > 0 && (
+                <View style={styles.summaryRow}>
+                  <Text>
+                    Discount{calculatedDiscountPercent > 0 ? ` (${calculatedDiscountPercent}%)` : ""}:
+                  </Text>
+                  <Text>-{invoiceData.discountAmount.toFixed(2)}</Text>
+                </View>
+              )}
               <View style={[styles.summaryRow, styles.totalRow]}>
                 <Text>Total:</Text>
-                <Text>{invoiceData.total.toFixed(2)}</Text>
+                <Text>Tk. {invoiceData.total.toFixed(2)}</Text>
               </View>
               <View style={{ padding: 6 }}>
                 <Text style={{ fontSize: 8, marginBottom: 2 }}>
                   Received: {invoiceData.received.toFixed(2)}
                 </Text>
-                <Text style={{ fontSize: 8, fontWeight: "bold" }}>
-                  Balance: {invoiceData.due.toFixed(2)}
+                <Text style={[{ fontSize: 8 }, calculatedDue > 0 ? styles.boldText : {}]}>
+                  Balance Due: {calculatedDue.toFixed(2)}
                 </Text>
               </View>
             </View>
@@ -281,7 +343,9 @@ export default function LayoutThree({ title, data }: LayoutProps) {
               <View
                 style={{
                   marginTop: 25,
-                  borderTop: "1pt dashed #000",
+                  borderTopWidth: 1,
+                  borderTopColor: "#000",
+                  borderTopStyle: "dashed",
                   width: 110,
                   paddingTop: 5,
                   alignItems: "center",
